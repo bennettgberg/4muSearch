@@ -161,7 +161,8 @@ for nFile in range(0, len(dataset),mjobs) :
             #outLines.append("xrdcp root://cmseos.fnal.gov//store/user/bgreenbe/haa_4tau_{}/signal_{}/{} inFile.root\n".format(era, aMassString, fname))
         outFileName = "{0:s}_{1:03d}.root".format(args.nickName,nFile+j)
         #print("python HAA{}.py -f inFile.root -o {} --nickName {} --csv {} -y {} -s {} -w 1 -g {}\n".format(ttttstr, outFileName,args.nickName, args.csv, args.year, args.selection, args.genmatch))
-        outLines.append("python ntupler_4mu.py -f inFile.root -o {0:s} --nickName {1:s} --csv {2:s} -y {3:s} -w 1 -g {5:d} -d {6:s} -j {7:s}\n".format(outFileName,args.nickName, args.csv, args.year, args.selection, args.genmatch, "MC" if isMC else "Data", args.doSystematics))
+        #outLines.append("python ntupler_4mu.py -f inFile.root -o {0:s} --nickName {1:s} --csv {2:s} -y {3:s} -w 1 -g {5:d} -d {6:s} -j {7:s}\n".format(outFileName,args.nickName, args.csv, args.year, args.selection, args.genmatch, "MC" if isMC else "Data", args.doSystematics))
+        outLines.append("python ntupler_eta.py -f inFile.root -o {0:s} --nickName {1:s} --csv {2:s} -y {3:s} -w 1 -g {5:d} -d {6:s} -j {7:s}\n".format(outFileName,args.nickName, args.csv, args.year, args.selection, args.genmatch, "MC" if isMC else "Data", args.doSystematics))
         #copy the file to eos.
 #        outLines.append("xrdcp {0:s} root://cmseos.fnal.gov//store/user/bgreenbe/haa_4tau/{1:s}/{0:s}\n".format(outFileName, args.nickName))
         outLines.append("rm inFile.root\n")
@@ -169,7 +170,8 @@ for nFile in range(0, len(dataset),mjobs) :
 
     allname = "all_{0:s}_{1:03d}.root".format(args.nickName, nFile+1) #can use below instead of rewriting twice.
     outLines.append("hadd -f -k all_{0:s}_{1:03d}.root *ntup *weights\n".format(args.nickName,nFile+1))
-    outLines.append("xrdcp -f all_{0:s}_{1:03d}.root root://cmseos.fnal.gov//store/user/bgreenbe/4mu_{2:s}/{0:s}\n".format(args.nickName, nFile+1, era))
+    #outLines.append("xrdcp -f all_{0:s}_{1:03d}.root root://cmseos.fnal.gov//store/user/bgreenbe/4mu_{2:s}/{0:s}\n".format(args.nickName, nFile+1, era))
+    outLines.append("xrdcp -f all_{0:s}_{1:03d}.root root://cmseos.fnal.gov//store/user/bgreenbe/eta_{2:s}/{0:s}\n".format(args.nickName, nFile+1, era))
     outLines.append("rm *.pyc\nrm *.so\nrm *.pcm\nrm *cc.d\n")
     outLines.append("rm *.ntup *.weights *.so\nrm *.pcm\nrm *cc.d\n")
 #        fileloop=dataset[nFile:nFile+maxx][j]
@@ -220,14 +222,16 @@ for file in scriptList :
     print("thisdir={0:s}".format(thisdir))
     #outLines.append('transfer_input_files = {0:s}ZH.py, {0:s}MC_{1:s}.root, {0:s}data_pileup_{1:s}.root, {0:s}MCsamples_{1:s}.csv, {0:s}ScaleFactor.py, {0:s}SFs.tar.gz, {0:s}cuts_{2:s}.yaml, '.format(dir,args.year, args.selection))
     #outLines.append('transfer_input_files = {0:s}ZH.py, {0:s}MC_{1:s}.root, {0:s}data_pileup_{1:s}.root, {0:s}MCsamples_{1:s}.csv, {0:s}cuts_{2:s}.yaml, '.format(dir,args.year, args.selection))
-    json_path = thisdir + "/ref/"
+    json_path = thisdir + "ref/"
     if args.year == "2017":
         json_path += "Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON.txt"
     else:
     #put in other json paths.
         pass
-    outLines.append('transfer_input_files = {0:s}code/ntupler_4mu{4:s}.py, {0:s}ref/MC_{1:s}_nAODv7.root, {0:s}ref/data_pileup_{1:s}.root, {0:s}ref/MCsamples_{1:s}_v7.csv, {0:s}code/cuts_4mu.yaml, {0:s}{3:s}, {5:s},'.format(thisdir,args.year, args.selection, args.csv, ttttstr, json_path))
-    outLines.append('{0:s}code/tauFun2{1:s}.py, {0:s}code/Weights.py, {0:s}code/generalFunctions.py, {0:s}code/outTuple{1:s}.py\n'.format(thisdir, ttttstr))
+    #outLines.append('transfer_input_files = {0:s}code/ntupler_4mu{4:s}.py, {0:s}ref/MC_{1:s}_nAODv7.root, {0:s}ref/data_pileup_{1:s}.root, {0:s}ref/MCsamples_{1:s}_v7.csv, {0:s}code/cuts_4mu.yaml, {0:s}{3:s}, {5:s},'.format(thisdir,args.year, args.selection, args.csv, ttttstr, json_path))
+    outLines.append('transfer_input_files = {0:s}code/ntupler_eta{4:s}.py, {0:s}ref/MC_{1:s}_nAODv7.root, {0:s}ref/data_pileup_{1:s}.root, {0:s}ref/MCsamples_{1:s}_v7.csv, {0:s}code/cuts_4mu.yaml, {0:s}{3:s}, {5:s},'.format(thisdir,args.year, args.selection, args.csv, ttttstr, json_path))
+    #outLines.append('{0:s}code/muFun{1:s}.py, {0:s}code/Weights.py, {0:s}code/generalFunctions.py, {0:s}code/outTuple_4mu{1:s}.py\n'.format(thisdir, ttttstr))
+    outLines.append('{0:s}code/muFun{1:s}.py, {0:s}code/Weights.py, {0:s}code/generalFunctions.py, {0:s}code/outTuple_eta{1:s}.py\n'.format(thisdir, ttttstr))
 #    outLines.append('Proxy_filename = x509up\n')
 #    outLines.append('Proxy_path = /afs/cern.ch/user/s/shigginb/private/$(Proxy_filename)\n')
     outLines.append('should_transfer_files = YES\n')

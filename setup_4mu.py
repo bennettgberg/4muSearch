@@ -1,7 +1,7 @@
 #python 2 idk where it's at
 
 #this script will take in the sample names from the file "bpgSamples.csv", and set up a different directory for each of them.
-#  (by calling makeCondorsam.py for each sample name/location).
+#  (by calling makeCondorbpg.py for each sample name/location).
 
 
 import os
@@ -10,21 +10,22 @@ import sys
 def main():
     
     #submit jobs within this script (T) or just do the setup (F)
-    submit_now = False # True # False #True
+    submit_now = False # True
 
     #always delete current directory if it already exists?
     always_del = False
 
-    year = 2017
+    year = 2016
     
     #number of root files to run in a single job
-    nroot = 1 # 1
+    nroot = 1
 
     #do systematics or nah (will take way longer)
     doSyst = False # True
 
     #name for parent directory for all the new directories
-    parent = "4mu_{}".format(year)
+    #parent = "4mu_{}".format(year)
+    parent = "eta_{}".format(year)
         
     inname = "bpgSamples.csv"
     infile = open(inname, "r")
@@ -53,7 +54,8 @@ def main():
         else:
             os.system("mkdir -p %s"%(new_name) )
         #also make a directory on eos for it.
-        eos_path = "/eos/uscms/store/user/bgreenbe/4mu_%d/%s"%(year, samp_name)
+        #eos_path = "/eos/uscms/store/user/bgreenbe/4mu_%d/%s"%(year, samp_name)
+        eos_path = "/eos/uscms/store/user/bgreenbe/eta_%d/%s"%(year, samp_name)
         #MUST delete all prior contents in the eos directory if it already exists.
         if os.path.exists(eos_path):
             if not always_del:
@@ -66,7 +68,8 @@ def main():
                     always_del = True
             if always_del:
                 os.system("rm %s/*.root"%(eos_path))
-        os.system("eos root://cmseos.fnal.gov mkdir /store/user/bgreenbe/4mu_%d/%s"%(year, samp_name))
+        #os.system("eos root://cmseos.fnal.gov mkdir /store/user/bgreenbe/4mu_%d/%s"%(year, samp_name))
+        os.system("eos root://cmseos.fnal.gov mkdir /store/user/bgreenbe/eta_%d/%s"%(year, samp_name))
         #run the setup code
         os.system("cd %s ; python ../../subtools/makeCondorbpg.py --dataSet %s --nickName %s --csv bpgSamples.csv --mode anaXRD --year %d -c %d -g 0 -p /uscms/homes/b/bgreenbe/x509up_u52949 -l tcsh -myeos %d -d %s %s\n"%(new_name, sample, samp_name, year, nroot, 1 if my_eos else 0, "MC" if isMC else "Data", "-j true" if doSyst else ""))
         #come back to get ready for the next one.

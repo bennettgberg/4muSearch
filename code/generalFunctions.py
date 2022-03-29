@@ -95,37 +95,38 @@ def checkMETFlags(entry, year, isMC=False) :
     return METfilter
 
 
-def printEvent(entry, isMC=True) :
+def printEvent(entry, isMC=True, isntuple=False) :
 
-    print("** Run={0:d} LS={1:d} Event={2:d} MET={3:.1f}".format(entry.run,entry.luminosityBlock,entry.event,entry.MET_pt))
+    print("** Run={0:d} LS={1:d} Event={2:d} MET={3:.1f}".format(entry.run,entry.lumi if isntuple else entry.luminosityBlock,entry.evt if isntuple else entry.event,entry.met if isntuple else entry.MET_pt))
     if entry.nMuon > 0 :
         print("Muons\n # Q    Pt   Eta   Phi   Iso  Medium Tight Soft    dxy     dz   MC     dR     Pt   eta   phi, genMatch")
         for j in range(entry.nMuon) :
             muSign = '+'
             if entry.Muon_charge[j] < 0 : muSign = '-'
             print("{0:2d} {1:2s}{2:5.1f}{3:6.2f}{4:6.2f}{5:7.3f} {6:5s} {7:5s} {8:5s}{9:7.3f}{10:7.3f}{11:s}".format(
-                j,muSign,entry.Muon_pt[j],entry.Muon_eta[j],entry.Muon_phi[j],entry.Muon_pfRelIso04_all[j],str(entry.Muon_mediumId[j]),str(entry.Muon_tightId[j]),
-                str(entry.Muon_softId[j]),entry.Muon_dxy[j],entry.Muon_dz[j],
+                j,muSign,entry.Muon_pt[j],entry.Muon_eta[j],entry.Muon_phi[j],entry.Muon_iso[j] if isntuple else entry.Muon_pfRelIso04_all[j],str(entry.Muon_mediumId[j]),str(entry.Muon_tightId[j]),
+                "" if isntuple else str(entry.Muon_softId[j]),entry.Muon_dxy[j],entry.Muon_dz[j],
                 getMCmatchString(entry.Muon_eta[j],entry.Muon_phi[j],entry) if isMC else " -- ")), ord(entry.Muon_genPartFlav[j]) if isMC else " -- "
 
+    #get rid of the False and as soon as possible!!!
     if entry.nElectron > 0 :
         print("Electrons                           Lost  \n # Q    Pt   Eta   Phi   Iso   Qual Hits  MVA  WP90    dxy     dz   MC     dR     Pt   eta   phi genMatch")
 
         for j in range(entry.nElectron) :
             eSign = '+'
             if entry.Electron_charge[j] < 0 : eSign = '-'
-            print("{0:2d} {1:2s}{2:5.1f}{3:6.2f}{4:6.2f}{5:7.3f}{6:6d}{7:5d}{8:7.3f} {9} {10:7.3f}{11:7.3f}{12:s}".format(j,eSign,
-              entry.Electron_pt[j],entry.Electron_eta[j],entry.Electron_phi[j],entry.Electron_miniPFRelIso_all[j],
-              entry.Electron_cutBased[j],ord(entry.Electron_lostHits[j]),entry.Electron_mvaFall17V2noIso[j],entry.Electron_mvaFall17V2noIso_WP90[j],
+            print("{0:2d} {1:2s}{2:5.1f}{3:6.2f}{4:6.2f}{5:7.3f}{6:6f}{7:5f}{8:7.3f} {9} {10:7.3f}{11:7.3f}{12:s}".format(j,eSign,
+              entry.Electron_pt[j],entry.Electron_eta[j],entry.Electron_phi[j],entry.Electron_iso[j] if isntuple else entry.Electron_miniPFRelIso_all[j],
+              entry.Electron_pt[j] if isntuple else entry.Electron_cutBased[j],0 if isntuple else ord(entry.Electron_lostHits[j]),entry.Electron_eMVA[j] if isntuple else entry.Electron_mvaFall17V2noIso[j],entry.Electron_eMVA[j] if isntuple else entry.Electron_mvaFall17V2noIso_WP90[j],
               entry.Electron_dxy[j],entry.Electron_dz[j],
-              getMCmatchString(entry.Electron_eta[j],entry.Electron_phi[j],entry) if isMC else " -- ")), ord(entry.Electron_genPartFlav[j]) if isMC else " -- "
+              getMCmatchString(entry.Electron_eta[j],entry.Electron_phi[j],entry) if isMC else " -- "), ord(entry.Electron_genPartFlav[j]) if isMC else " -- ")
 
 
     #print("Lepton List\n    Pt    Eta    Phi ")
     #for lepton in makeLeptonList(entry) :
     #    print("{0:7.1f} {1:7.3f} {2:7.3f}".format(lepton[0].Pt(),lepton[0].Eta(),lepton[0].Phi()))
 
-    if entry.nJet > 0 :
+    if not isntuple and entry.nJet > 0:
         print("Jets\n #   Pt   Eta   Phi  jetId btagCSVV2  MC")
         for j in range(entry.nJet) :
             print("{0:2d} {1:5.1f}{2:6.2f}{3:6.2f}{4:6d}{5:8.3f}".format(
@@ -136,13 +137,13 @@ def printEvent(entry, isMC=True) :
         #    print("{0:d} {1:7.1f} {2:6.2f} {3:6.2f}".format(i,jet[0].Pt(),jet[0].Eta(),jet[0].Phi()))
         #    i += 1
 
-    if False and entry.nPhoton > 0 :
+    if entry.nPhoton > 0 :
         print("Photons\n # Pt   Eta   Phi ")
         for j in range(entry.nPhoton) :
             print("{0:2d} {1:5.1f}{2:6.2f}{3:6.2f}".format(
                 j,entry.Photon_pt[j],entry.Photon_eta[j],entry.Photon_phi[j]))
 
-    if True and entry.nTau > 0:
+    if not isntuple and entry.nTau > 0:
         print("Taus                                    |-Deep Tau-||-------Iso------|")
         print(" #    Pt   Eta   Phi   Mode ID   DMID    vJ  vM  vE  Raw   Chg   Neu  jetIdx antiEl antiMu  dxy     dz  idMVA   rawIso  MC  Q genmatch")
 #        print(" #    Pt   Eta   Phi   Mode ID   DMID    vJ  vM  vE  Raw   Chg   Neu  jetIdx antiEl antiMu  dxy     dz  idMVA   rawIso  MC, genMatch")
@@ -161,7 +162,7 @@ def printEvent(entry, isMC=True) :
 
                 #ord(entry.Tau_idDeepTau2017v2p1VSjet[j]),ord(entry.Tau_idDeepTau2017v2p1VSmu[j]),ord(entry.Tau_idDeepTau2017v2p1VSe[j]))), ord(entry.Tau_genPartFlav[j])
 
-    if True and entry.nTrigObj > 0 :
+    if not isntuple and entry.nTrigObj > 0 :
         trigID = { 11:"Electr", 22:"Photon", 13:"  Muon",15:"   Tau", 1:"   Jet", 6:"FatJet", 2:"   MET", 3:"    HT" , 4:"   MHT" }
         print("Trigger Objects        Trig  Filt")
         print(" #    Pt   Eta   Phi     ID  Bits")

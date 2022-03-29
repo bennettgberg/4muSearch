@@ -3,7 +3,8 @@
 from ROOT import TLorentzVector, TH1
 from math import sqrt, sin, cos, pi
 #import tauFun_4tau
-import tauFun2
+#import tauFun2
+import muFun
 import ROOT, array
 import os
 import sys
@@ -21,12 +22,12 @@ class outTuple() :
         # Tau Decay types
         self.kUndefinedDecayType, self.kTauToHadDecay,  self.kTauToElecDecay, self.kTauToMuDecay = 0, 1, 2, 3
         ROOT.gInterpreter.ProcessLine(".include .")
-        for baseName in ['MeasuredTauLepton','svFitAuxFunctions','FastMTT'] :
-            if os.path.isfile("{0:s}_cc.so".format(baseName)) :
-                ROOT.gInterpreter.ProcessLine(".L {0:s}_cc.so".format(baseName))
-            else :
-                ROOT.gInterpreter.ProcessLine(".L {0:s}.cc++".format(baseName))
-                # .L is not just for .so files, also .cc
+       # for baseName in ['MeasuredTauLepton','svFitAuxFunctions','FastMTT'] :
+       #     if os.path.isfile("{0:s}_cc.so".format(baseName)) :
+       #         ROOT.gInterpreter.ProcessLine(".L {0:s}_cc.so".format(baseName))
+       #     else :
+       #         ROOT.gInterpreter.ProcessLine(".L {0:s}.cc++".format(baseName))
+       #         # .L is not just for .so files, also .cc
 
         ########### JetMet systematics
         #self.listsyst=['njets', 'nbtag', 'jpt', 'jeta', 'jflavour','MET_T1_pt', 'MET_T1_phi', 'MET_pt', 'MET_phi', 'MET_T1Smear_pt', 'MET_T1Smear_phi']
@@ -122,6 +123,7 @@ class outTuple() :
         self.nElectron        = array('l',[0])
         self.nMuon            = array('l',[0])
         self.nTau            = array('l',[0])
+        self.nPhoton         = array('l',[0])
         self.lumi             = array('l',[0])
         self.evt              = array('l',[0])
         self.nPU              = array('l',[0])
@@ -358,8 +360,6 @@ class outTuple() :
         self.MET_pt_nom= array('f',[0])
 
         # trigger info
-        self.isTrig_2   = array('f',[0])
-        self.isTrig_1   = array('f',[0])
         self.isDoubleTrig   = array('f',[0])
         #self.isTripleTrig   = array('f',[0])
         self.isTripleTrig   = array('l',[0])
@@ -427,6 +427,7 @@ class outTuple() :
         self.t.Branch('nElectron',              self.nElectron,               'nElectron/l' )
         self.t.Branch('nMuon',              self.nMuon,               'nMuon/l' )
         self.t.Branch('nTau',              self.nTau,               'nTau/l' )
+        self.t.Branch('nPhoton',              self.nPhoton,               'nPhoton/l' )
         self.t.Branch('lumi',             self.lumi,              'lumi/I' )
         self.t.Branch('evt',              self.evt,               'evt/l' )
         self.t.Branch('nPU',              self.nPU,               'nPU/I' )
@@ -664,8 +665,6 @@ class outTuple() :
         self.t.Branch('metcov11', self.metcov11, 'metcov11/F')
 
         # trigger sf
-        self.t.Branch('isTrig_2',  self.isTrig_2, 'isTrig_2/F' )
-        self.t.Branch('isTrig_1',  self.isTrig_1, 'isTrig_1/F' )
         self.t.Branch('isDoubleTrig',  self.isDoubleTrig, 'isDoubleTrig/F' )
         #self.t.Branch('isTripleTrig',  self.isTripleTrig, 'isTripleTrig/F' )
         self.t.Branch('isTripleTrig',  self.isTripleTrig, 'isTripleTrig/I' )
@@ -936,47 +935,47 @@ class outTuple() :
 
 
 
-    def runSVFit(self, entry, channel, jt1, jt2, tau1, tau2, metpt, metphi) :
+    #def runSVFit(self, entry, channel, jt1, jt2, tau1, tau2, metpt, metphi) :
 
-        measuredMETx = metpt*cos(metphi)
-        measuredMETy = metpt*sin(metphi)
+    #    measuredMETx = metpt*cos(metphi)
+    #    measuredMETy = metpt*sin(metphi)
 
-        #define MET covariance
-        covMET = ROOT.TMatrixD(2,2)
-        covMET[0][0] = entry.MET_covXX
-        covMET[1][0] = entry.MET_covXY
-        covMET[0][1] = entry.MET_covXY
-        covMET[1][1] = entry.MET_covYY
-        #covMET[0][0] = 787.352
-        #covMET[1][0] = -178.63
-        #covMET[0][1] = -178.63
-        #covMET[1][1] = 179.545
+    #    #define MET covariance
+    #    covMET = ROOT.TMatrixD(2,2)
+    #    covMET[0][0] = entry.MET_covXX
+    #    covMET[1][0] = entry.MET_covXY
+    #    covMET[0][1] = entry.MET_covXY
+    #    covMET[1][1] = entry.MET_covYY
+    #    #covMET[0][0] = 787.352
+    #    #covMET[1][0] = -178.63
+    #    #covMET[0][1] = -178.63
+    #    #covMET[1][1] = 179.545
 
-        #self.kUndefinedDecayType, self.kTauToHadDecay,  self.kTauToElecDecay, self.kTauToMuDecay = 0, 1, 2, 3
+    #    #self.kUndefinedDecayType, self.kTauToHadDecay,  self.kTauToElecDecay, self.kTauToMuDecay = 0, 1, 2, 3
 
-        if channel == 'et' :
-            measTau1 = ROOT.MeasuredTauLepton(self.kTauToElecDecay, tau1.Pt(), tau1.Eta(), tau1.Phi(), 0.000511)
-        elif channel == 'mt' :
-            measTau1 = ROOT.MeasuredTauLepton(self.kTauToMuDecay, tau1.Pt(), tau1.Eta(), tau1.Phi(), 0.106)
-        elif channel == 'tt' :
-            measTau1 = ROOT.MeasuredTauLepton(self.kTauToHadDecay, tau1.Pt(), tau1.Eta(), tau1.Phi(), entry.Tau_mass[jt1])
-                        
-        if channel != 'em' :
-            measTau2 = ROOT.MeasuredTauLepton(self.kTauToHadDecay, tau2.Pt(), tau2.Eta(), tau2.Phi(), entry.Tau_mass[jt2])
+    #    if channel == 'et' :
+    #        measTau1 = ROOT.MeasuredTauLepton(self.kTauToElecDecay, tau1.Pt(), tau1.Eta(), tau1.Phi(), 0.000511)
+    #    elif channel == 'mt' :
+    #        measTau1 = ROOT.MeasuredTauLepton(self.kTauToMuDecay, tau1.Pt(), tau1.Eta(), tau1.Phi(), 0.106)
+    #    elif channel == 'tt' :
+    #        measTau1 = ROOT.MeasuredTauLepton(self.kTauToHadDecay, tau1.Pt(), tau1.Eta(), tau1.Phi(), entry.Tau_mass[jt1])
+    #                    
+    #    if channel != 'em' :
+    #        measTau2 = ROOT.MeasuredTauLepton(self.kTauToHadDecay, tau2.Pt(), tau2.Eta(), tau2.Phi(), entry.Tau_mass[jt2])
 
-        if channel == 'em' :
-            measTau1 = ROOT.MeasuredTauLepton(self.kTauToElecDecay, tau1.Pt(), tau1.Eta(), tau1.Phi(), 0.000511)
-            measTau2 = ROOT.MeasuredTauLepton(self.kTauToMuDecay, tau2.Pt(), tau2.Eta(), tau2.Phi(), 0.106)
+    #    if channel == 'em' :
+    #        measTau1 = ROOT.MeasuredTauLepton(self.kTauToElecDecay, tau1.Pt(), tau1.Eta(), tau1.Phi(), 0.000511)
+    #        measTau2 = ROOT.MeasuredTauLepton(self.kTauToMuDecay, tau2.Pt(), tau2.Eta(), tau2.Phi(), 0.106)
 
-        VectorOfTaus = ROOT.std.vector('MeasuredTauLepton')
-        instance = VectorOfTaus()
-        instance.push_back(measTau1)
-        instance.push_back(measTau2)
+    #    VectorOfTaus = ROOT.std.vector('MeasuredTauLepton')
+    #    instance = VectorOfTaus()
+    #    instance.push_back(measTau1)
+    #    instance.push_back(measTau2)
 
-        FMTT = ROOT.FastMTT()
-        FMTT.run(instance, measuredMETx, measuredMETy, covMET)
-        ttP4 = FMTT.getBestP4()
-        return ttP4.M(), ttP4.Mt()
+    #    FMTT = ROOT.FastMTT()
+    #    FMTT.run(instance, measuredMETx, measuredMETy, covMET)
+    #    ttP4 = FMTT.getBestP4()
+    #    return ttP4.M(), ttP4.Mt()
 
     def Fill(self, entry, SVFit, cat, jt1, jt2, LepP, LepM, lepList, fullLepList, isMC, era, doUncertainties=False ,  met_pt=-99, met_phi=-99, systIndex=0, tMass=[], tPt=[], eMass=[], ePt=[], mMass=[], mPt=[]) :
     #def Fill(self, entry, SVFit, cat, jt1, jt2, LepP, LepM, lepList, isMC, era, doUncertainties=False ,  met_pt=-99, met_phi=-99, systIndex=0) :
@@ -1014,21 +1013,6 @@ class outTuple() :
             TrigListLepT, hltListLepT = GF.findTripleLeptTrigger(fullLepList, entry, channel_ll, era)
             #TrigListLepT = list(dict.fromkeys(TrigListLepT))
 
-            #if len(TrigListLepD) > 0 : print TrigListLepD, hltListLepD, TrigListLep, hltListLep
-            #if len(TrigListLepD) == 2 :
-            #    if lepList[0] == TrigListLepD[0] :
-            #        is_Dtrig_1 = 1 #that means that the leading lepton
-            #    else :
-            #        is_Dtrig_1 = -1
-#            if len(hltListLep) > 0 and  len(hltListLepSubL) == 0 :
-#                is_trig_1 = 1
-#            if len(hltListLep) == 0 and len(hltListLepSubL) > 0 :
-#                is_trig_1 = -1
-#            if len(hltListLep) > 0 and len(hltListLepSubL)>0 :
-#                is_trig_1 = 2
-#            self.whichTriggerWord[0]=0
-#            self.whichTriggerWordSubL[0]=0
-#            print "hltListLepT ",hltListLepT
             if "TriLept" in hltListLepT:
 #                print "found triple muon event"
                 self.isTripleTrig[0] = 1
@@ -1055,6 +1039,7 @@ class outTuple() :
             self.nElectron[0]  = entry.nElectron
             self.nMuon[0]  = entry.nMuon
             self.nTau[0]  = entry.nTau
+            self.nPhoton[0]  = entry.nPhoton
             self.lumi[0] = entry.luminosityBlock
             self.evt[0]  = entry.event
             self.iso_1[0]  = -99
@@ -1258,7 +1243,8 @@ class outTuple() :
         #primary datasets: Tau, DoubleMuonLowMass. Also SingleMuon, which was already being used anyway.
         #
             #bits=[]
-            tauTrigs = tauFun2.tauTriggers_4tau(int(era))
+            #tauTrigs = tauFun2.tauTriggers_4tau(int(era))
+            tauTrigs = muFun.tauTriggers_4tau(int(era))
             ibits = []
             for jj,tt in enumerate(tauTrigs):
                 #get the proper word number
@@ -1283,7 +1269,8 @@ class outTuple() :
             self.tauTriggerWord3[0] = int("".join(ibits), 2)
 
         #neede for all systematics as jt1/jt2 may change per systematic
-        if jt1 > -1 and jt2 > -1 : self.cat[0]  = tauFun2.catToNumber(cat)
+        #if jt1 > -1 and jt2 > -1 : self.cat[0]  = tauFun2.catToNumber(cat)
+        if jt1 > -1 and jt2 > -1 : self.cat[0]  = muFun.catToNumber(cat)
         if jt1>-1 or jt2 >-1 :
 
             tau1, tau2 = TLorentzVector(), TLorentzVector()
@@ -1503,6 +1490,83 @@ class outTuple() :
                 if entry.Tau_decayMode[jt2] == 0 : tmass= 0.13960
                 tau2.SetPtEtaPhiM(entry.Tau_pt[jt2], entry.Tau_eta[jt2], entry.Tau_phi[jt2], tmass)
 
+            elif channel == "mm":
+                self.pt_3[0]     = entry.Muon_pt[jt1]
+                self.phi_3[0]    = entry.Muon_phi[jt1]
+                self.eta_3[0]    = entry.Muon_eta[jt1]
+                self.m_3[0]      = entry.Muon_mass[jt1]
+                self.q_3[0]      = entry.Muon_charge[jt1]
+                self.d0_3[0]     = entry.Muon_dxy[jt1]
+                self.dZ_3[0]     = entry.Muon_dz[jt1]
+                self.iso_3[0]    = entry.Muon_pfRelIso04_all[jt1]
+                self.tightId_3[0]      = entry.Muon_tightId[jt1]
+                self.mediumId_3[0]       = entry.Muon_mediumId[jt1]
+                self.mediumPromptId_3[0]   = entry.Muon_mediumPromptId[jt1]
+                self.looseId_3[0]       = entry.Muon_looseId[jt1]
+                self.isGlobal_3[0]      = entry.Muon_isGlobal[jt1]
+                self.isTracker_3[0]     = entry.Muon_isTracker[jt1]
+                self.ip3d_3[0]       = entry.Muon_ip3d[jt1]
+                #bpg had to add ePt qualifier...???
+                if SystIndex ==0 and  isMC and not mPt == []:
+                    self.pt_uncor_3[0] = mPt[jt1]
+                    self.m_uncor_3[0] = mMass[jt1]
+                    self.pt_uncor_4[0] = mPt[jt2]
+                    self.m_uncor_4[0] = mMass[jt2]
+
+                if isMC:
+                    try : self.gen_match_3[0] = ord(entry.Muon_genPartFlav[jt1])
+                    except AttributeError : self.gen_match_3[0] = -1
+
+                tau1.SetPtEtaPhiM(entry.Muon_pt[jt1], entry.Muon_eta[jt1], entry.Muon_phi[jt1], muonMass)
+                                                                                                            #???
+                # fill genMatch for tau(ele)
+                if isMC:
+                    idx_genMu = entry.Muon_genPartIdx[jt1]
+
+                    # if idx_genMu = -1, no match was found
+                    if idx_genMu >= 0:
+                        idx_genMu_mom      = entry.GenPart_genPartIdxMother[idx_genMu]
+                        self.pt_3_tr[0]     = entry.GenPart_pt[idx_genMu]
+                        self.phi_3_tr[0]    = entry.GenPart_phi[idx_genMu]
+                        self.eta_3_tr[0]    = entry.GenPart_eta[idx_genMu]
+                        self.GenPart_statusFlags_3[0]    = entry.GenPart_statusFlags[idx_genMu]
+                        self.GenPart_status_3[0]    = entry.GenPart_status[idx_genMu]
+
+                self.pt_4[0]     = entry.Muon_pt[jt2]
+                self.phi_4[0]    = entry.Muon_phi[jt2]
+                self.eta_4[0]    = entry.Muon_eta[jt2]
+                self.m_4[0]      = entry.Muon_mass[jt2]
+                self.q_4[0]      = entry.Muon_charge[jt2]
+                self.d0_4[0]     = entry.Muon_dxy[jt2]
+                self.dZ_4[0]     = entry.Muon_dz[jt2]
+                self.iso_4[0]    = entry.Muon_pfRelIso04_all[jt2]
+                self.tightId_4[0]      = entry.Muon_tightId[jt2]
+                self.mediumId_4[0]      = entry.Muon_mediumId[jt2]
+                self.mediumPromptId_4[0]   = entry.Muon_mediumPromptId[jt2]
+                self.looseId_4[0]       = entry.Muon_looseId[jt2]
+                self.isGlobal_4[0]      = entry.Muon_isGlobal[jt2]
+                self.isTracker_4[0]     = entry.Muon_isTracker[jt2]
+                self.ip3d_4[0]       = entry.Muon_ip3d[jt2]
+                if isMC:
+                    try : self.gen_match_4[0] = ord(entry.Muon_genPartFlav[jt2])
+                    except AttributeError : self.gen_match_4[0] = -1
+
+                tau2.SetPtEtaPhiM(entry.Muon_pt[jt2], entry.Muon_eta[jt2], entry.Muon_phi[jt2], muonMass)
+
+                # fill genMatch for tau(mu)
+                if isMC:
+                    idx_genMu = entry.Muon_genPartIdx[jt2]
+
+                    # if idx_genMu = -1, no match was found
+                    if idx_genMu >= 0:
+                        idx_genMu_mom       = entry.GenPart_genPartIdxMother[idx_genMu]
+                        self.pt_4_tr[0]     = entry.GenPart_pt[idx_genMu]
+                        self.phi_4_tr[0]    = entry.GenPart_phi[idx_genMu]
+                        self.eta_4_tr[0]    = entry.GenPart_eta[idx_genMu]
+                        self.GenPart_statusFlags_4[0]    = entry.GenPart_statusFlags[idx_genMu]
+                        self.GenPart_status_4[0]    = entry.GenPart_status[idx_genMu]
+
+
             else :
                 print("Invalid channel={0:s} in outTuple(). Exiting.".format(channel))
                 exit()
@@ -1513,7 +1577,7 @@ class outTuple() :
 
 
             # Fill variables for Leg4, where 4->tau(had)
-            if channel != 'em':
+            if channel != 'em' and channel != "mm":
                 self.pt_4[0]  = entry.Tau_pt[jt2]
                 self.phi_4[0] = entry.Tau_phi[jt2]
                 self.eta_4[0] = entry.Tau_eta[jt2]
@@ -1936,12 +2000,6 @@ class outTuple() :
                     self.MET_phi_UnclUp[0] = entry.METFixEE2017_phi_unclustEnUp
                     self.MET_pt_UnclDown[0] = entry.METFixEE2017_pt_unclustEnDown
                     self.MET_phi_UnclDown[0] = entry.METFixEE2017_phi_unclustEnDown
-
-        # trig
-        if SystIndex ==0 :
-            self.isTrig_1[0]   = is_trig_1
-            self.isTrig_2[0]   = is_trig_2
-            self.isDoubleTrig[0]   = is_Dtrig_1
 
         leplist=[]
         leplist.append(LepP)
