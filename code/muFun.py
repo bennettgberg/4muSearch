@@ -575,14 +575,17 @@ def getAllPairs(lepTypes, entry, list0, list1):
             #determine if dr is sufficient
             if dr < dr_cut:
                 continue
-            if oppo:
+            #if oppo false, then REQUIRE same sign!
+            if oppo or not oppo:
                 #find charge of each lepton.
                 lname0 = lepname(lepTypes[0])
                 lname1 = lepname(lepTypes[1])
                 exec("q0 = entry.%s_charge[a]"%(lname0))
                 exec("q1 = entry.%s_charge[b]"%(lname1))
                 #only want oppositely charged leptons.
-                if q0 == q1:
+                if q0 == q1 and oppo:
+                    continue
+                elif q0 != q1 and not oppo:
                     continue
             #if sufficient, append to all_pairs.
             all_pairs.append([a,b])
@@ -630,6 +633,33 @@ def comparePair2(entry, pair1, pair2, lepTypes):
     #if equal, compare only the first pair.
     return (pairpts[1] > pairpts[0])
 
+#return False if should swap (ie pair2 is better)
+def comparePair2_ip3d(entry, pair1, pair2, lepTypes):
+    # a return value of True means that pair2 is "better" than pair 1 
+    #"better" meaning has higher scalar pt sum of the 4 particles!
+    pair2s = [pair1, pair2]
+    #full (4-particle) pt sums
+    ip3dsums = [0.0, 0.0]
+    #for each of the 2 pair2s
+    for ii in range(2):
+        ip3ds = [0. for jj in range(4)]
+        #for each of the 2 pairs in the pair of pairs
+        for jj in range(2):
+            #for each of the 2 members of the pair
+            for kk in range(2):
+                #get correct lepton type.
+                lname = lepname(lepTypes[2*jj+kk])
+                #add the correct amount of pt to the correct place.
+                exec("ip3ds[jj*2+kk] = entry.%s_ip3d[pair2s[ii][jj][kk]]"%(lname))
+        #now sum the ip3d of the 4 pairings
+        for jj in range(4):
+            for kk in range(jj+1, 4):
+                ip3dsums[ii] += abs(ip3ds[kk]-ip3ds[jj])
+        
+    if ip3dsums[1] < ip3dsums[0]:
+        return True
+    return False
+
 #partially sort list 'items' so that only the first item is in the right place.
 def bubble2(lepTypes, entry, items):
     # Sort the list of pairs-of-pairs using a bubble sort
@@ -637,6 +667,16 @@ def bubble2(lepTypes, entry, items):
     for i in range(len(items)-1,0,-1) :
         #corrected 2020/07/20
         if not comparePair2(entry, items[i], items[i-1], lepTypes) : 
+            items[i-1], items[i] = items[i], items[i-1] 
+    return items
+
+#bubble but for min diff ip3d instead of max pt
+def bubble_ip3d(lepTypes, entry, items):
+    # Sort the list of pairs-of-pairs using a bubble sort
+    # The list is not fully sorted, since only the top pair-of-pairing is needed
+    for i in range(len(items)-1,0,-1) :
+        #corrected 2020/07/20
+        if not comparePair2_ip3d(entry, items[i], items[i-1], lepTypes) : 
             items[i-1], items[i] = items[i], items[i-1] 
     return items
 
@@ -722,7 +762,8 @@ def getBestPair(lepTypes, entry, list0, list1, pairList=[]) :
     return all_pairs[0]
 
 #return pairlist0 \cross pairlist1 (restricted to not overlap in dr)
-def getAllPair2s(leps, ev, pairlist0, pairlist1,debug=False):
+# set allow_repeat to False in order to make sure only one pair2 of all the same particles is allowed.
+def getAllPair2s(leps, ev, pairlist0, pairlist1, debug=False):
     pair2s = []
     
     #lepTypes to use just for getting the dR value
@@ -816,6 +857,47 @@ def getBestPairs(lepTypes, entry, pair2s, debug=False) :
         vecs.append( get4vec(lepTypes[i], entry, all_pair2s[0][pairnum][partnum]) )
     return vecs, all_pair2s[0][0], all_pair2s[0][1]
 
+#just like getBestPairs, but instead of using max pt, use min |diff in ip3d|
+def getBestPairs_ip3d(lepTypes, entry, pair2s, debug=False) :
+    #debug = False
+    #ok, now find the 2 best pairs, with the restriction that particles can't be too close to each other.
+    #sort these pairs enough to get the very best one.
+    all_pair2s = bubble_ip3d(lepTypes, entry, pair2s)
+    if debug:
+        print("all_pair2s: {}".format(all_pair2s))
+
+    if len(lepTypes) != 4:
+        print("Error: lepTypes should be 4 letters, one for each of the four leptons.")
+        sys.exit()
+    #if tt channel (or mm or ee) involved, make sure the highest pT tau comes first.
+    #for each of the 2 pairs
+    for ii in range(2):
+        jj = ii*2
+        #mm is the 2 leptons under current consideration.
+        mm = lepTypes[jj:jj+2]
+        if mm[0] == mm[1]:
+            if debug:
+                import generalFunctions as GF
+                #setting isMC to false just so don't have to include another useless argument to this function
+                GF.printEvent(entry, False)
+                print("lepTypes={}, ii={},jj={},mm={}".format(lepTypes, ii, jj, mm))
+            #array of ip3ds for the two particles
+            ip3ds = [0., 0.]
+            #get correct lepton type
+            lname = lepname(mm[0])
+            for kk in range(2):
+                #get the pt of the kkth particle of the iith pair of the best pair-of-pairs
+                exec("ip3ds[kk] = entry.%s_ip3d[all_pair2s[0][ii][kk]]"%(lname))
+
+    #for the lead tau pair, we also need a Lorentz vector. 
+    vecs = []
+    for i in range(4):
+        #for j in range(2):
+        pairnum = i / 2 #pair 0 or pair 1
+        partnum = i % 2 #particle 0 or 1 within that pair
+        vecs.append( get4vec(lepTypes[i], entry, all_pair2s[0][pairnum][partnum]) )
+    return vecs, all_pair2s[0][0], all_pair2s[0][1]
+
 #literally just print out info about why this cut was made.
 def printCut(event, lepTypes, lepType, num, cutType, val):
     if lepType == 'e':
@@ -839,6 +921,10 @@ def goodElectron_4mu(lepTypes, entry, j, printOn=False):
     if entry.Electron_pt[j] < sel['ele_pt']:
         if printOn:
             printCut(entry.event, lepTypes, 'e', j, "pt", entry.Electron_pt[j])
+        return False
+    if sel['ele_ID'] and not entry.Electron_looseId[j] : 
+        if printOn:
+            printCut(entry.event, lepTypes, 'e', j, "looseId", entry.Electron_looseId[j])
         return False
     if abs(entry.Electron_eta[j]) > sel['ele_eta'] :
         if printOn:
@@ -911,6 +997,11 @@ def goodMuon_4mu(lepTypes, entry, j, printOn=False):
             printCut(entry.event, lepTypes, 'm', j, "dz", entry.Muon_dz[j])
         return False
     #if it passed all the cuts, it's good!
+    if sel['tight']:
+        if not entry.Muon_tightId[j]:
+            if printOn:
+                printCut(entry.event, lepTypes, 'm', j, "tight muId", "{}".format(tightId[j])) 
+            return False
     return True
 
 #True if the specified tauon is valid, otherwise false.

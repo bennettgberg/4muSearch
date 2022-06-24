@@ -120,6 +120,7 @@ class outTuple() :
         self.nPULOOT              = array('l',[0])
         self.nPUtrue              = array('f',[0])
         self.nPV              = array('l',[0])
+        self.nSV              = array('l',[0])
         self.nPVGood              = array('l',[0])
         self.nOtherPV              = array('l',[0])
 
@@ -127,6 +128,10 @@ class outTuple() :
         self.PV_x              = array('f',[0])
         self.PV_y              = array('f',[0])
         self.PV_z              = array('f',[0])
+
+        self.SV_x              = array('f',[0]*nMax)
+        self.SV_y              = array('f',[0]*nMax)
+        self.SV_z              = array('f',[0]*nMax)
 
         self.algo              = array('l',[0])
         self.weight           = array('f',[0])
@@ -212,10 +217,14 @@ class outTuple() :
         self.t.Branch('nPULOOT',              self.nPULOOT,               'nPULOOT/I' )
         self.t.Branch('nPUtrue',              self.nPUtrue,               'nPUtrue/F' )
         self.t.Branch('nPV',              self.nPV,               'nPV/I' )
+        self.t.Branch('nSV',              self.nSV,               'nSV/I' )
         self.t.Branch('nPVGood',              self.nPVGood,               'nPVGood/I' )
         self.t.Branch('PV_x',              self.PV_x,               'PV_x/F' )
         self.t.Branch('PV_y',              self.PV_y,               'PV_y/F' )
         self.t.Branch('PV_z',              self.PV_z,               'PV_z/F' )
+        self.t.Branch('SV_x',              self.SV_x,               'SV_x[%d]/F'%(nMax) )
+        self.t.Branch('SV_y',              self.SV_y,               'SV_y[%d]/F'%(nMax) )
+        self.t.Branch('SV_z',              self.SV_z,               'SV_z[%d]/F'%(nMax) )
         self.t.Branch('algo',              self.algo,               'algo/I' )
         self.t.Branch('weight',           self.weight,            'weight/F' )
         self.t.Branch('weightPU',           self.weightPU,            'weightPU/F' )
@@ -528,6 +537,7 @@ class outTuple() :
                 self.nPUtrue[0]  = -1
                 self.nPV[0]  = -1
                 self.nPVGood[0]  = -1
+            self.nSV[0] = entry.nSV
 
             try:
                 self.PV_x[0] = entry.PV_x
@@ -545,6 +555,11 @@ class outTuple() :
                 self.nOtherPV[0] = -1
                 for k in range(nMax):
                     self.OtherPV_z = -9999.
+
+            for j in range(entry.nSV):
+                self.SV_x[j] = entry.SV_x[j]
+                self.SV_y[j] = entry.SV_y[j]
+                self.SV_z[j] = entry.SV_z[j]
 
             #LHE
             try:
