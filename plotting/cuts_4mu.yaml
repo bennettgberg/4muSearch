@@ -15,8 +15,8 @@ mm:
   mu_type: false
   ll_DR: 0.0
   lt_DR: 0.0
-  #oppQ: true
-  oppQ: false
+  oppQ: true
+  #oppQ: false
   tight: false
 ee:
   ele_pt: 0.0

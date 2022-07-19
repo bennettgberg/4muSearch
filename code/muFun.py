@@ -25,7 +25,7 @@ __date__   = "Monday, Oct. 28th, 2019"
 #with io.open('cuts_ZH.yaml', 'r') as stream:
 with io.open('cuts_4mu.yaml', 'r') as stream:
     selections = yaml.load(stream)
-print "Using selections:\n", selections
+print("Using selections:\n" + str(selections)) 
 
 #returns the list of muon trigger paths for the given year.
 def muonTriggers(year):
@@ -292,16 +292,19 @@ def goodTrigger_4mu(e, year, debug=False):
     gooddoubleMuon = False
     #for p in ["muon", "electron", "tau"]:
     for p in ["doubleMuon"]:
-        exec("trigs = %sTrigs"%(p))
+        #exec("trigs = %sTrigs"%(p))
+        trigs = eval("%sTrigs"%(p))
         for t in trigs:
             if printOn:
                 print("trigger: {}".format(t))
             try:
-                exec("passed = e.HLT_%s"%(t))
+                #exec("passed = e.HLT_%s"%(t))
+                passed = eval("e.HLT_%s"%(t))
             except AttributeError:
                 passed = False
             if passed:
-                exec("good%s = True"%(p))
+                #exec("good%s = True"%(p))
+                gooddoubleMuon = True
                 break
 
     #return goodmuon or goodelectron or goodtau
@@ -407,7 +410,7 @@ def comparePairvspT(entry, tauPairList, printOn=False) :
     for i in range(0,len(tauPairList)) :
 
         j1, j2 = tauPairList[i][0], tauPairList[i][1] # look at leading pt tau in each pair
-        if printOn : print 'appending now', entry.Tau_pt[j1] + entry.Tau_pt[j2], j1, j2, tauPairList[i]
+        if printOn : print('appending now' + str( entry.Tau_pt[j1] + entry.Tau_pt[j2]) + str( j1 ) + str( j2 ) + str( tauPairList[i]) ) 
         SumList.append(entry.Tau_pt[j1] + entry.Tau_pt[j2])
 
 
@@ -538,8 +541,10 @@ def find_dR(lt, ev, n0, n1):
         c = n0 if i==0 else n1
         #lepton name
         lname = lepname(lt[i])
-        exec("etas[i] = ev.%s_eta[c]"%(lname))
-        exec("phis[i] = ev.%s_phi[c]"%(lname))
+        #exec("etas[i] = ev.%s_eta[c]"%(lname))
+        #exec("phis[i] = ev.%s_phi[c]"%(lname))
+        etas[i] = eval("ev.%s_eta[c]"%(lname))
+        phis[i] = eval("ev.%s_phi[c]"%(lname))
     #now calculate DR
     dr = pair_dR(etas[0], phis[0], etas[1], phis[1])
 
@@ -580,8 +585,8 @@ def getAllPairs(lepTypes, entry, list0, list1):
                 #find charge of each lepton.
                 lname0 = lepname(lepTypes[0])
                 lname1 = lepname(lepTypes[1])
-                exec("q0 = entry.%s_charge[a]"%(lname0))
-                exec("q1 = entry.%s_charge[b]"%(lname1))
+                q0 = eval("entry.%s_charge[a]"%(lname0))
+                q1 = eval("entry.%s_charge[b]"%(lname1))
                 #only want oppositely charged leptons.
                 if q0 == q1 and oppo:
                     continue
@@ -621,7 +626,8 @@ def comparePair2(entry, pair1, pair2, lepTypes):
                 #get correct lepton type.
                 lname = lepname(lepTypes[2*jj+kk])
                 #add the correct amount of pt to the correct place.
-                exec("add_pt = entry.%s_pt[pair2s[ii][jj][kk]]"%(lname))
+                #exec("add_pt = entry.%s_pt[pair2s[ii][jj][kk]]"%(lname))
+                add_pt = eval("entry.%s_pt[pair2s[ii][jj][kk]]"%(lname))
                 ptsums[ii] += add_pt
                 if jj == 0:
                     pairpts[ii] += add_pt
@@ -650,7 +656,8 @@ def comparePair2_ip3d(entry, pair1, pair2, lepTypes):
                 #get correct lepton type.
                 lname = lepname(lepTypes[2*jj+kk])
                 #add the correct amount of pt to the correct place.
-                exec("ip3ds[jj*2+kk] = entry.%s_ip3d[pair2s[ii][jj][kk]]"%(lname))
+                #exec("ip3ds[jj*2+kk] = entry.%s_ip3d[pair2s[ii][jj][kk]]"%(lname))
+                ip3ds[jj*2+kk] = eval("entry.%s_ip3d[pair2s[ii][jj][kk]]"%(lname))
         #now sum the ip3d of the 4 pairings
         for jj in range(4):
             for kk in range(jj+1, 4):
@@ -843,7 +850,8 @@ def getBestPairs(lepTypes, entry, pair2s, debug=False) :
             lname = lepname(mm[0])
             for kk in range(2):
                 #get the pt of the kkth particle of the iith pair of the best pair-of-pairs
-                exec("pts[kk] = entry.%s_pt[all_pair2s[0][ii][kk]]"%(lname))
+                #exec("pts[kk] = entry.%s_pt[all_pair2s[0][ii][kk]]"%(lname))
+                pts[kk] = eval("entry.%s_pt[all_pair2s[0][ii][kk]]"%(lname))
             #if 2nd particle has more pt, then swap with first particle (just to keep it nice and orderly).
             if pts[1] > pts[0]:
                 all_pair2s[0][ii][0], all_pair2s[0][ii][1] = all_pair2s[0][ii][1], all_pair2s[0][ii][0]
@@ -887,13 +895,14 @@ def getBestPairs_ip3d(lepTypes, entry, pair2s, debug=False) :
             lname = lepname(mm[0])
             for kk in range(2):
                 #get the pt of the kkth particle of the iith pair of the best pair-of-pairs
-                exec("ip3ds[kk] = entry.%s_ip3d[all_pair2s[0][ii][kk]]"%(lname))
+                #exec("ip3ds[kk] = entry.%s_ip3d[all_pair2s[0][ii][kk]]"%(lname))
+                ip3ds[kk] = eval("entry.%s_ip3d[all_pair2s[0][ii][kk]]"%(lname))
 
     #for the lead tau pair, we also need a Lorentz vector. 
     vecs = []
     for i in range(4):
         #for j in range(2):
-        pairnum = i / 2 #pair 0 or pair 1
+        pairnum = int(i / 2) #pair 0 or pair 1
         partnum = i % 2 #particle 0 or 1 within that pair
         vecs.append( get4vec(lepTypes[i], entry, all_pair2s[0][pairnum][partnum]) )
     return vecs, all_pair2s[0][0], all_pair2s[0][1]
@@ -1069,13 +1078,19 @@ def getGoodLists(lepTypes, entry, printOn=False):
         #now get the correct lepton name.
         lname = lepname(lepTypes[i])
         #now get number of particles of this type
-        exec("npart = entry.n%s"%(lname))
+        #exec("npart = entry.n%s"%(lname))
+        npart = eval("entry.n%s"%(lname))
+        #print("npart = " + str(npart))
         #and finally form the list.
         for j in range(npart):
             #app will be true if we should append this particle; else false.
-            exec("app = good%s_4mu(lt, entry, j, printOn)"%(lname))
+            app = eval("good%s_4mu(lt, entry, j, printOn)"%(lname))
             if app:
+                #print("app true!")
                 lists[i].append(j)
+            else:
+                #print("app false!!")
+                pass
 
     return lists #lists[0], lists[1]
 
@@ -1092,14 +1107,14 @@ def findAMother(entry,motherType,daughter):
     try:
         MotherIdx = entry.GenPart_genPartIdxMother[daughter]
     except:
-        print "Catch error at findAMother ",sys.exc_info()[0]
+        print("Catch error at findAMother " + str(sys.exc_info()[0]))
         return -1
     #print "daughter index",daughter
     #print "mother index",MotherIdx
     if MotherIdx==-1:
         return -1
     if abs(entry.GenPart_pdgId[MotherIdx])==motherType:
-        print "found the right mother",MotherIdx
+        print("found the right mother" + str(MotherIdx))
         return  MotherIdx
     else:
         return findAMother(entry,motherType,MotherIdx) #case where we need the grandma... muons that radiate gammas are two generations...

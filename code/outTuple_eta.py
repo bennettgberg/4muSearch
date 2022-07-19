@@ -677,7 +677,7 @@ class outTuple() :
                         exec("self.%s_GenPart_statusFlags[j]    = entry.GenPart_statusFlags[idx_gen]"%(pType))
                         exec("self.%s_GenPart_status[j]    = entry.GenPart_status[idx_gen]"%(pType))
 
-                    try: exec("self.{0:s}_gen_match[j] = ord(entry.{0:s}_genPartFlav[jt1])".format(pType))
+                    try: exec("self.{0:s}_gen_match[j] = ord(entry.{0:s}_genPartFlav[j])".format(pType))
                     except AttributeError: exec("self.%s_gen_match[j] = -1"%(pType))
 
         if str(era) != '2017' :

@@ -1,11 +1,14 @@
 #get the data from infile, fit to const bkg + gaussian.
-from ROOT import TFile, TF1, TH1F, TCanvas
+from ROOT import TFile, TF1, TH1F, TCanvas, TLegend
 
 #infile = "hipTpair/data_DoubleMuon_Run2_skimmed.root"
 #infile = "multiquad/data_DoubleMuon_Run2_skimmed.root"
 #infile = "multimmg/data_DoubleMuon_Run2_skimmed.root"
 infile = "oppocharge/data_DoubleMuon_Run2_skimmed.root"
 distname = "Mmmee"
+
+#set true to also plot the *blinded* signal MC distribution on the same plot
+compare_MC = True #False
 #distname = "Mmmg"
 #accidentally used the wrong name!
 #distname = "Ptmmee"
@@ -57,7 +60,7 @@ cgfit.SetParameter(6, .01) #slope
 cgfit.SetParameter(7, .01) #quadratic coef
 
 #initiate histogram
-h = TH1F("h", "mu mu e e", nbins, xmin, xmax)
+h = TH1F("h", "#mu#muee", nbins, xmin, xmax)
 #h = TH1F("h", "mu mu gamma", nbins, xmin, xmax)
 
 xax = h.GetXaxis()
@@ -90,7 +93,10 @@ fitresult = h.Fit("cgfit", "LSB")
 
 c = TCanvas("c", "c")
 c.cd()
-h.Draw()
+h.SetMarkerColor(1)
+h.SetMarkerStyle(8)
+h.SetLineColor(1)
+h.Draw("PE")
 #cgfit.SetLineColor(2)
 #cgfit.Draw("same")
 #h.Draw("same")
@@ -143,4 +149,24 @@ from math import log
 significance = (2*((sigInt + bkgInt)*log((sigInt+bkgInt)*(bkgInt+sigmaB**2)/(bkgInt**2 + (sigInt+bkgInt)*sigmaB**2)) - bkgInt**2/sigmaB**2 *log(1 + sigmaB**2*sigInt/(bkgInt*(bkgInt+sigmaB**2)))))**0.5 
 
 print("Significance is about %f sigmas."%(significance))
+
+if compare_MC:
+    fMC = TFile.Open("EtaTo2Mu2E_2018_0_skimmedMCtest.root")
+    tMC = fMC.Get("Events")
+
+    hMC = TH1F("hMC", "#mu#muee", nbins, xmin, xmax)
+    #switch to a temporary canvas so don't draw bs on the good canvas??
+    #ctemp = TCanvas("ctemp", "ctemp")
+    #ctemp.cd()
+    tMC.Draw(distname + ">>hMC", "Weight*(Weight>0)", "hist same")
+    #c.cd()
+    #hMC.Draw("hist same")
+    #make legend
+    leg = TLegend()
+    leg.AddEntry(h, "Data")
+    leg.AddEntry(cgfit, "Crystal ball + quadratic fit")
+    leg.AddEntry(hMC, "signal MC * blinding coefficient")
+    leg.Draw("same")
+    c.Update()
+
 raw_input("h")

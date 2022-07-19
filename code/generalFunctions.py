@@ -357,7 +357,7 @@ def findTripleLeptTrigger(goodLeptonList,entry,flavour,era):
             LepttrigList.append(leadL)
             LepttrigList.append(subleadL)
             LepttrigList.append(subsubleadL)
-            print "found all leptons for trimuon trigger "
+            print("found all leptons for trimuon trigger ")
             hltList.append('TriLept')
 
     return LepttrigList, hltList
@@ -634,27 +634,27 @@ def findSingleLeptTrigger(goodLeptonList,entry,flavour,era, printOn=False):
 
                 if entry.Muon_pt[leadL] > 23 and abs(entry.Muon_eta[leadL]) < 2.1:
                     if printOn :
-                        print ''
-                        print entry.luminosityBlock, entry.run, entry.event
+                        print('')
+                        print("{}, {}, {}".format(entry.luminosityBlock, entry.run, entry.event))
                         print("mm, iobj={7:d}, nTrigObj_id={0:d}, filter_bit={1:x}, dR_leading={2:f}, dR_subleading={3:f}, Muon_pT={4:f}, Muon_eta={5:f},  Muon_phi={6:f}, isbit2={8:b} isbit8={9:b}".format(entry.TrigObj_id[iobj], entry.TrigObj_filterBits[iobj], dR, dRr, entry.Muon_pt[leadL], abs(entry.Muon_eta[leadL]), entry.Muon_phi[leadL], iobj, isbit2, isbit8))
-                        print 'HLT_IsoMu22:', HLT_IsoMu22, 'HLT_IsoMu22_eta2p1:', HLT_IsoMu22_eta2p1, 'HLT_IsoTkMu22:', HLT_IsoTkMu22, 'HLT_IsoTkMu22_eta2p1:', HLT_IsoTkMu22_eta2p1
+                        print('HLT_IsoMu22:' + str( HLT_IsoMu22 ) +  'HLT_IsoMu22_eta2p1:' + str( HLT_IsoMu22_eta2p1 ) +  'HLT_IsoTkMu22:' + str( HLT_IsoTkMu22 ) + 'HLT_IsoTkMu22_eta2p1:' + str( HLT_IsoTkMu22_eta2p1) )
                     #printTriggerObjects(entry)
 
                     if (HLT_IsoMu22  and isbit2 )  :
                         hltList.append(True)
-                        if printOn: print 'HLT_IsoMu22:', HLT_IsoMu22
+                        if printOn: print('HLT_IsoMu22:' + str( HLT_IsoMu22 )) 
 
                     if (HLT_IsoMu22_eta2p1 and isbit2 )  :
                         hltList.append(True)
-                        if printOn: print 'HLT_IsoMu22_eta2p1:', HLT_IsoMu22_eta2p1
+                        if printOn: print('HLT_IsoMu22_eta2p1:' + str( HLT_IsoMu22_eta2p1 ))
 
                     if  (HLT_IsoTkMu22  and isbit8) :
                         hltList.append(True)
-                        if printOn: print 'HLT_IsoTkMu22:', HLT_IsoTkMu22
+                        if printOn: print('HLT_IsoTkMu22:' + str( HLT_IsoTkMu22 ))
 
                     if  (HLT_IsoTkMu22_eta2p1 and isbit8) :
                         hltList.append(True)
-                        if printOn: print 'HLT_IsoTkMu22_eta2p1:', HLT_IsoTkMu22_eta2p1
+                        if printOn: print('HLT_IsoTkMu22_eta2p1:' + str( HLT_IsoTkMu22_eta2p1 ))
 
 
             if era!='2016' and flavour == 'mm':
@@ -667,15 +667,15 @@ def findSingleLeptTrigger(goodLeptonList,entry,flavour,era, printOn=False):
 
             if str(era)=='2016' and flavour == 'ee':
                 if printOn:
-                    print ''
-                    print entry.luminosityBlock, entry.run, entry.event
+                    print( '' )
+                    print("{}, {}, {}".format( entry.luminosityBlock, entry.run, entry.event))
 
                     #print("ee, nTrigObj_id={0:d}, filter_bit={1:x}, dR_leading={2:f}, dR_subleading={3:f}, Electron_pT={4:f}, Electron_eta={5:f},  Electron_phi={9:f}, iobj={6:d}, obj_pt={10:f}, obj_eta={7:f}, obj_phi={8:f}".format(entry.TrigObj_id[iobj], entry.TrigObj_filterBits[iobj], dR, dRr, entry.Electron_pt[leadL], abs(entry.Electron_eta[leadL]), iobj, entry.TrigObj_eta[iobj], entry.TrigObj_phi[iobj], entry.Electron_phi[leadL], entry.TrigObj_pt[iobj]))
                     print("ee, iobj={7:d}, nTrigObj_id={0:d}, filter_bit={1:x}, dR_leading={2:f}, dR_subleading={3:f}, Electron_pT={4:f}, Electron_eta={5:f},  Electron_phi={6:f}, , isbit2={8:b} isbit8={9:b}".format(entry.TrigObj_id[iobj], entry.TrigObj_filterBits[iobj], dR, dRr, entry.Electron_pt[subleadL], abs(entry.Electron_eta[subleadL]), entry.Electron_phi[subleadL], iobj, isbit2, isbit8))
                 if HLT_Ele25_eta2p1_WPTight_Gsf and abs(entry.Electron_eta[leadL]) < 2.1 and entry.Electron_pt[leadL] > 26 :
                     if isbit2 :
                         hltList.append(True)
-                        if printOn:print 'HLT_Ele25_eta2p1_WPTight_Gsf: ',HLT_Ele25_eta2p1_WPTight_Gsf
+                        #if printOn:print 'HLT_Ele25_eta2p1_WPTight_Gsf: ',HLT_Ele25_eta2p1_WPTight_Gsf
 
             if str(era)=='2017' and flavour == 'ee':
 
@@ -702,22 +702,22 @@ def findSingleLeptTrigger(goodLeptonList,entry,flavour,era, printOn=False):
                     #print("mm, subL nTrigObj_id={0:d}, filter_bit={1:x}, dR_leading={2:f}, dR_subleading={3:f}, Muon_pT={4:f}, Muon_eta={5:f},  Muon_phi={9:f}, iobj={6:d}, obj_pt={10:f}, obj_eta={7:f}, obj_phi={8:f}".format(entry.TrigObj_id[iobj], entry.TrigObj_filterBits[iobj], dR, dRr, entry.Muon_pt[subleadL], abs(entry.Muon_eta[subleadL]), iobj, entry.TrigObj_eta[iobj], entry.TrigObj_phi[iobj], entry.Muon_phi[subleadL], entry.TrigObj_pt[iobj]))
                     if printOn:
                         print("mm, subL iobj={7:d}, nTrigObj_id={0:d}, filter_bit={1:x}, dR_leading={2:f}, dR_subleading={3:f}, Muon_pT={4:f}, Muon_eta={5:f},  Muon_phi={6:f}, isbit2={8:b} isbit8={9:b}".format(entry.TrigObj_id[iobj], entry.TrigObj_filterBits[iobj], dR, dRr, entry.Muon_pt[subleadL], abs(entry.Muon_eta[subleadL]), entry.Muon_phi[subleadL], iobj, isbit2, isbit8))
-                        print 'HLT_IsoMu22:', HLT_IsoMu22, 'HLT_IsoMu22_eta2p1:', HLT_IsoMu22_eta2p1, 'HLT_IsoTkMu22:', HLT_IsoTkMu22, 'HLT_IsoTkMu22_eta2p1:', HLT_IsoTkMu22_eta2p1
+                        #print 'HLT_IsoMu22:', HLT_IsoMu22, 'HLT_IsoMu22_eta2p1:', HLT_IsoMu22_eta2p1, 'HLT_IsoTkMu22:', HLT_IsoTkMu22, 'HLT_IsoTkMu22_eta2p1:', HLT_IsoTkMu22_eta2p1
                     if (HLT_IsoMu22  and isbit2)  :
                         hltListSubL.append(True)
-                        if printOn: print 'subL HLT_IsoMu22:', HLT_IsoMu22, 'dR', dRr
+                        #if printOn: print 'subL HLT_IsoMu22:', HLT_IsoMu22, 'dR', dRr
 
                     if (HLT_IsoMu22_eta2p1 and isbit2)  :
                         hltListSubL.append(True)
-                        if printOn: print 'subL HLT_IsoMu22_eta2p1:', HLT_IsoMu22_eta2p1, 'dR', dRr
+                        #if printOn: print 'subL HLT_IsoMu22_eta2p1:', HLT_IsoMu22_eta2p1, 'dR', dRr
 
                     if  (HLT_IsoTkMu22 and isbit8) :
                         hltListSubL.append(True)
-                        if printOn: print 'subL HLT_IsoTkMu22:', HLT_IsoTkMu22, 'dR', dRr
+                        #if printOn: print 'subL HLT_IsoTkMu22:', HLT_IsoTkMu22, 'dR', dRr
 
                     if  (HLT_IsoTkMu22_eta2p1 and isbit8) :
                         hltListSubL.append(True)
-                        if printOn: print 'subL HLT_IsoTkMu22_eta2p1:', HLT_IsoTkMu22_eta2p1, 'dR', dRr
+                        #if printOn: print 'subL HLT_IsoTkMu22_eta2p1:', HLT_IsoTkMu22_eta2p1, 'dR', dRr
 
 
             if era!='2016' and flavour == 'mm':
@@ -734,7 +734,7 @@ def findSingleLeptTrigger(goodLeptonList,entry,flavour,era, printOn=False):
                     #print("ee, subL nTrigObj_id={0:d}, filter_bit={1:x}, dR_leading={2:f}, dR_subleading={3:f}, Electron_pT={4:f}, Electron_eta={5:f},  Electron_phi={9:f}, iobj={6:d},  obj_pt={10:f}, obj_eta={7:f}, obj_phi={8:f}".format(entry.TrigObj_id[iobj], entry.TrigObj_filterBits[iobj], dR, dRr, entry.Electron_pt[subleadL], abs(entry.Electron_eta[subleadL]), iobj, entry.TrigObj_eta[iobj], entry.TrigObj_phi[iobj], entry.Electron_phi[subleadL], entry.TrigObj_eta[iobj]))
                     if printOn:
                         print("ee, subL iobj={7:d}, nTrigObj_id={0:d}, filter_bit={1:x}, dR_leading={2:f}, dR_subleading={3:f}, Electron_pT={4:f}, Electron_eta={5:f},  Electron_phi={6:f}".format(entry.TrigObj_id[iobj], entry.TrigObj_filterBits[iobj], dR, dRr, entry.Electron_pt[subleadL], abs(entry.Electron_eta[subleadL]), entry.Electron_phi[subleadL], iobj))
-                        print 'subL HLT_Ele25_eta2p1_WPTight_Gsf:', HLT_Ele25_eta2p1_WPTight_Gsf, 'dR', dRr
+                        #print 'subL HLT_Ele25_eta2p1_WPTight_Gsf:', HLT_Ele25_eta2p1_WPTight_Gsf, 'dR', dRr
 
             if str(era)=='2017' and flavour == 'ee':
 
@@ -924,7 +924,7 @@ class pileUpWeight() :
         #temp hack given that we dont have all histos
         #hMC = fData.Get('pileup')
 
-        print "finding histogram ",nickName
+        #print "finding histogram ",nickName
         hMC = fMC.Get('hMC_{0:s}'.format(nickName)) ##this is you would need to have one histo per process
         #hMC = fMC.Get('h{0:s}'.format(nickName)) ##this is you would need to have one histo per process
         #hMC = fMC.Get('pileup') ##this is you would need to have one histo per process
@@ -1056,7 +1056,7 @@ class checkJSON() :
 
     def __init__(self,filein) :
         self.good, self.bad  = 0, 0
-        print 'inside json function : will use the JSON', filein
+        #print 'inside json function : will use the JSON', filein
         input_file = open (filein)
         self.json_array = json.load(input_file)
 

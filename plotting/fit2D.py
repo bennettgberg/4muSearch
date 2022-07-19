@@ -1,7 +1,8 @@
 import ROOT
 import sys
-sys.path.append("../../tm_analysis/analysis/python/utils")
-import fitter
+#sys.path.append("../../tm_analysis/analysis/python/utils")
+sys.path.append("../../tm_analysis/analysis/python")
+import utils.fitter as fitter
 
 #name of the input file
 infile = "data_DoubleMuon_Run2_skimmed.root"
@@ -67,6 +68,7 @@ if subtract:
 
 myfitter = [0 for ipt in range(nptbins)] 
 rrv = [0 for ipt in range(nptbins)] 
+result = [0 for ipt in range(nptbins)] 
 #Now in each pT bin, fit a bkg+gaussian to the invM
 for ipt in range(nptbins):
     print("************Starting pT bin " + str(ipt) + "***************")
@@ -75,6 +77,21 @@ for ipt in range(nptbins):
     rrv[ipt].setRange("peak", pkmin, pkmax)
     rrv[ipt].setRange("full", immin, immax)
     myfitter[ipt] = fitter.fitter_4mu(mass=rrv[ipt])
+    #set fitter parameters.
+    import utils.fit_function_library as library
+    myfitter[ipt].set_sig_params(mcb=library.Param(.957, .9, 1.0), acb=library.Param(-4.5, -6, -0.5), ncb=library.Param(21, 20, 22), scb=library.Param(.0195, .01, .02))
+    myfitter[ipt].set_bkg_params( a1=library.Param(.987, -1, 1), a2=library.Param(.145, -1, 1) )
+    #?? is this the diff??
+    #myfitter[ipt].set_bkg_params( a2=library.Param(.987, -1, 1), a1=library.Param(.145, -1, 1) )
+    myfitter[ipt].nbkg.setMax(1000000)
+    myfitter[ipt].nbkg.setVal(1)
+    myfitter[ipt].nsig.setMin(0)
+    myfitter[ipt].nsig.setMax(1000)
+    #prolly not necessary but will try just in case it changes something.
+    myfitter[ipt].nsig.setVal(50)
+    print("nbkg, nsig after changing ranges/values:")
+    myfitter[ipt].nbkg.Print()
+    myfitter[ipt].nsig.Print()
 
     #now get the data from this pt bin of the 2d histogram
     h = h2d.ProjectionY("h", ipt+1, ipt+1)
@@ -92,7 +109,9 @@ for ipt in range(nptbins):
     data = ROOT.RooDataHist("data"+str(ipt), "data"+str(ipt), rrv[ipt], ROOT.RooFit.Import(h))
 
     #do the fit
-    myfitter[ipt].model.fitTo(data)
+    result[ipt] = myfitter[ipt].model.fitTo(data, ROOT.RooFit.Save())
+    print("Fit Result: ")
+    print(result[ipt].Print("vvv")) 
 
     #plot the fit
     frame = rrv[ipt].frame()
@@ -108,8 +127,8 @@ for ipt in range(nptbins):
 
     ndata = h.Integral(h.FindBin(pkmin), h.FindBin(pkmax))
     argset = ROOT.RooArgSet(rrv[ipt])
-    sig_int = myfitter[ipt].sig.createIntegral(argset, ROOT.RooFit.NormSet(argset), ROOT.RooFit.Range("peak"))
-    bkg_int = myfitter[ipt].bkg.createIntegral(argset, ROOT.RooFit.NormSet(argset), ROOT.RooFit.Range("peak"))
+    sig_int = myfitter[ipt].sig.func.createIntegral(argset, ROOT.RooFit.NormSet(argset), ROOT.RooFit.Range("peak"))
+    bkg_int = myfitter[ipt].bkg.func.createIntegral(argset, ROOT.RooFit.NormSet(argset), ROOT.RooFit.Range("peak"))
     tot_int = myfitter[ipt].model.createIntegral(argset, ROOT.RooFit.NormSet(argset), ROOT.RooFit.Range("peak"))
     print("sigvals: %f, %f; bkgvals: %f, %f"%(sig_int.getVal(), myfitter[ipt].nsig.getVal(), bkg_int.getVal(), myfitter[ipt].nbkg.getVal())) 
     nsig = sig_int.getVal() * myfitter[ipt].nsig.getVal()
@@ -123,7 +142,7 @@ for ipt in range(nptbins):
 
     #TLegend constructor: x1, y1, x2, y2
     leg = ROOT.TLegend(0.6, 0.2, 0.95, 0.5)
-    leg.SetHeader("N: m_{2#mu2e} #in [0.9, 1.0] GeV")
+    leg.SetHeader("N: m_{#mu#mu#gamma} #in [0.9, 1.0] GeV")
     leg.SetLineWidth(0)
     leg.AddEntry("Sig", f"Signal (CB): N = {nsig:.1f}", "l")
     leg.AddEntry("Bkg", f"Background: N = {nbkg:.1f}", "l")

@@ -10,15 +10,15 @@ import sys
 def main():
     
     #submit jobs within this script (T) or just do the setup (F)
-    submit_now = True
+    submit_now = True # False # True
 
     #always delete current directory if it already exists?
     always_del = False
 
-    year = 2016
+    year = 2018
     
     #number of root files to run in a single job
-    nroot = 1
+    nroot = 5 # 1
 
     #do systematics or nah (will take way longer)
     doSyst = False # True
@@ -41,7 +41,8 @@ def main():
         
         #True if the files will be stored in my personal eos space, false otherwise.
         my_eos = False
-        if "HToAA" in samp_name and "_M-" in samp_name:
+        #if "HToAA" in samp_name and "_M-" in samp_name:
+        if "EtaTo2Mu2E" in samp_name:
             my_eos = True
         
         isMC = True
@@ -82,23 +83,23 @@ def main():
         print("Directory %s created."%(new_name))
         
         #try to cp fileList.txt to cern eos (if it's a signal sample).
-        if my_eos:
-            print("Error: my_eos not yet supported.")
-            sys.exit()
+        #if my_eos:
+            #print("Error: my_eos not yet supported.")
+            #sys.exit()
             #get mass of the signal sample
            # mass = samp_name.split('-')[-1]
            # #no need to cp the file again if it's already there.
            # if new_sample:
            #     print("command: scp %s/fileList.txt bgreenbe@lxplus.cern.ch:/eos/user/b/bgreenbe/HAA_ntuples/ggha01a01To4tau_%d_%s/"%(new_name, year, mass))
-           #     os.system("scp %s/fileList.txt bgreenbe@lxplus.cern.ch:/eos/user/b/bgreenbe/HAA_ntuples/ggha01a01To4tau_%d_%s/"%(new_name, year, mass))
+                #os.system("scp %s/fileList.txt bgreenbe@lxplus.cern.ch:/eos/user/b/bgreenbe/HAA_ntuples/ggha01a01To4tau_%d_%s/"%(new_name, year, mass))
            #     #create the directory in eos for these files to be moved to
            #     os.system("eos root://cmseos.fnal.gov mkdir /store/user/bgreenbe/haa_4tau_%d/signal_M-%s"%(year, mass))
            # #add signal sample to nAODv7
-           # #os.system("python /uscms/homes/b/bgreenbe/work/CMSSW_10_2_9/src/ZH_Run2/MC/addPUhisto.py -f /uscms/homes/b/bgreenbe/work/CMSSW_10_2_9/src/ZH_Run2/MC/MC_%d_nAODv7.root -ch ZZZ -n HToAATo4Tau_M-%s"%(year, mass))
+            #os.system("python tools/addPUhisto.py -f ref/MC_%d_nAODv7.root -ch ZZZ -n HToAATo4Tau_M-%s"%(year, mass))
            # os.system("python /uscms/homes/b/bgreenbe/work/CMSSW_10_2_9/src/ZH_Run2/MC/addPUhisto.py -f /uscms/homes/b/bgreenbe/work/CMSSW_10_2_9/src/ZH_Run2/MC/MC_%d_nAODv7.root -n HToAATo4Tau_M-%s"%(year, mass)) #ZHToTauTau default.
-        elif new_sample:
+        #elif new_sample:
 #            os.system("python /uscms/homes/b/bgreenbe/work/CMSSW_10_2_9/src/ZH_Run2/MC/addPUhisto.py -f /uscms/homes/b/bgreenbe/work/CMSSW_10_2_9/src/ZH_Run2/MC/MC_%d_nAODv7.root -ch ZZZ -n %s"%(year, samp_name)) 
-            pass
+        #    pass
 
         #submit the jobs now (if we're supposed to)
         if submit_now:

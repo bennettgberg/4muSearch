@@ -80,6 +80,7 @@ def getFileName(line) :
     return fileName
 
 
+print("Running makeCondorbpg.py.....")
 args = getArgs()
 era = str(args.year)
 isMC = True
@@ -96,7 +97,10 @@ query = '"file dataset={0:s}"'.format(args.dataSet)
 
 if "USER" in str(args.dataSet) : query = '"file dataset={0:s}"'.format(args.dataSet+" instance=prod/phys03")
 
-command = "dasgoclient --query={0:s} --limit=0  > fileList.txt".format(query)
+if not args.my_eos:
+    command = "dasgoclient --query={0:s} --limit=0  > fileList.txt".format(query)
+else:
+    command = "ls /eos/uscms/store/user/bgreenbe/EtaTo2Mu2E/NANOAOD_Signal_Samples > fileList.txt"
 print("Running in {0:s} mode.  Command={1:s}".format(args.mode,command))
 os.system(command)
 
@@ -151,14 +155,14 @@ for nFile in range(0, len(dataset),mjobs) :
             #outLines.append("xrdcp root://cms-xrd-global.cern.ch/{0:s} inFile.root\n".format(fileloop)) 
             outLines.append("xrdcp root://cmsxrootd.fnal.gov/{0:s} inFile.root\n".format(fileloop)) #does this work?
         else:
-            print("error: signal samples for 4mu not yet available.")
-            sys.exit(1)
+            #print("error: signal samples for 4mu not yet available.")
+            #sys.exit(1)
             #need to extract the filename and copy it from eos.
-            #words = fileloop.split("/")
-            #fname = words[len(words)-1]
+            words = fileloop.split("/")
+            fname = words[len(words)-1]
             ##for now this is always signal
             #aMassString = args.nickName.split('_')[-1]
-            #outLines.append("xrdcp root://cmseos.fnal.gov//store/user/bgreenbe/haa_4tau_{}/signal_{}/{} inFile.root\n".format(era, aMassString, fname))
+            outLines.append("xrdcp root://cmseos.fnal.gov//store/user/bgreenbe/EtaTo2Mu2E/NANOAOD_Signal_Samples/{} inFile.root\n".format(fname))
         outFileName = "{0:s}_{1:03d}.root".format(args.nickName,nFile+j)
         #print("python HAA{}.py -f inFile.root -o {} --nickName {} --csv {} -y {} -s {} -w 1 -g {}\n".format(ttttstr, outFileName,args.nickName, args.csv, args.year, args.selection, args.genmatch))
         #outLines.append("python ntupler_4mu.py -f inFile.root -o {0:s} --nickName {1:s} --csv {2:s} -y {3:s} -w 1 -g {5:d} -d {6:s} -j {7:s}\n".format(outFileName,args.nickName, args.csv, args.year, args.selection, args.genmatch, "MC" if isMC else "Data", args.doSystematics))
