@@ -98,9 +98,12 @@ query = '"file dataset={0:s}"'.format(args.dataSet)
 if "USER" in str(args.dataSet) : query = '"file dataset={0:s}"'.format(args.dataSet+" instance=prod/phys03")
 
 if not args.my_eos:
+    print("Files not stored on eos so querying dasgo.")
     command = "dasgoclient --query={0:s} --limit=0  > fileList.txt".format(query)
 else:
-    command = "ls /eos/uscms/store/user/bgreenbe/EtaTo2Mu2E/NANOAOD_Signal_Samples > fileList.txt"
+    print("Files stored on eos space. No need for dasgo query.") 
+    #command = "ls /eos/uscms/store/user/bgreenbe/EtaTo2Mu2E/NANOAOD_Signal_Samples > fileList.txt"
+    command = "ls /eos/uscms/store/user/bgreenbe/{}/NANOAOD_Signal_Samples/{}_*_NANOAOD_*.root > fileList.txt".format(args.nickName, args.nickName)
 print("Running in {0:s} mode.  Command={1:s}".format(args.mode,command))
 os.system(command)
 
@@ -162,7 +165,8 @@ for nFile in range(0, len(dataset),mjobs) :
             fname = words[len(words)-1]
             ##for now this is always signal
             #aMassString = args.nickName.split('_')[-1]
-            outLines.append("xrdcp root://cmseos.fnal.gov//store/user/bgreenbe/EtaTo2Mu2E/NANOAOD_Signal_Samples/{} inFile.root\n".format(fname))
+            #outLines.append("xrdcp root://cmseos.fnal.gov//store/user/bgreenbe/EtaTo2Mu2E/NANOAOD_Signal_Samples/{} inFile.root\n".format(fname))
+            outLines.append("xrdcp root://cmseos.fnal.gov//store/user/bgreenbe/{}/NANOAOD_Signal_Samples/{} inFile.root\n".format(args.nickName, fname))
         outFileName = "{0:s}_{1:03d}.root".format(args.nickName,nFile+j)
         #print("python HAA{}.py -f inFile.root -o {} --nickName {} --csv {} -y {} -s {} -w 1 -g {}\n".format(ttttstr, outFileName,args.nickName, args.csv, args.year, args.selection, args.genmatch))
         #outLines.append("python ntupler_4mu.py -f inFile.root -o {0:s} --nickName {1:s} --csv {2:s} -y {3:s} -w 1 -g {5:d} -d {6:s} -j {7:s}\n".format(outFileName,args.nickName, args.csv, args.year, args.selection, args.genmatch, "MC" if isMC else "Data", args.doSystematics))

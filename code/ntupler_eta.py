@@ -114,7 +114,10 @@ if MC :
 
 if args.weights > 0 :
     hWeight = TH1D("hWeights","hWeights",1,-0.5,0.5)
+    #sum of weights as a function of pT
+    hWeightPt = TH1D("hWeightsPt","hWeightsPt",65,0.0,65.0)
     hWeight.Sumw2()
+    hWeightPt.Sumw2()
 
     #print("intree just before the error:")
     #inTree.Print()
@@ -123,6 +126,30 @@ if args.weights > 0 :
     #    e.Print()
         if MC: hWeight.Fill(0, e.genWeight)
     
+        #sum of weights as a function of eta meson pT
+        if MC:
+            #for eta->mmee, the pT of the eta is the sum of the pT's of the 4 gen particles
+            #  and for eta->mmgamma it's the sum of the 3
+            ngen = 4
+            if "MuMuGamma" in outFileName:
+                ngen = 3
+            genparts = [TLorentzVector() for j in range(ngen)]
+            for j in range(ngen):
+                mass = 0
+                if e.GenPart_pdgId[j] == 221:
+                    mass = 0
+                elif abs(e.GenPart_pdgId[j]) == 13:
+                    mass = .105
+                elif abs(e.GenPart_pdgId[j]) == 11:
+                    mass = .000511
+                else:
+                    print("Error!!! Unrecognized pdgId: %d"%e.GenPart_pdgId[j]) 
+                    exit()
+                genparts[j].SetPtEtaPhiM( e.GenPart_pt[j], e.GenPart_eta[j], e.GenPart_phi[j], mass )
+            etavec = genparts[0] + genparts[1] + genparts[2]
+            if ngen == 4:
+                etavec += genparts[3]
+            hWeightPt.Fill(etavec.Pt(), e.genWeight)
 
         if "WJetsToLNu" in outFileName :
 
@@ -145,6 +172,7 @@ if args.weights > 0 :
             hDYxGenweightsArr[i].Write()
 
     hWeight.Write()
+    hWeightPt.Write()
     if args.weights == 2 : 
         fW.Close()
         sys.exit()
@@ -225,7 +253,8 @@ for count, e in enumerate(inTree) :
 	if  MC :   cutCounterGenWeight[cat].countGenWeight('InJSON', e.genWeight)
     
     MetFilter = GF.checkMETFlags(e,args.year)
-    if MetFilter : continue
+    #Commented out the MetFilter!!!!!!!!!!!
+    #if MetFilter : continue
     
     for cat in cats: 
         cutCounter[cat].count('METfilter') 

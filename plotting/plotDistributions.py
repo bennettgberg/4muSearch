@@ -12,12 +12,15 @@ from array import array
 multiquad = False
 
 #highest, lowest invariant Mass to keep
+#maxM = 99999999.0 # 2.0
 maxM = 2.0
 minM = 0.0
 
+#blinded = False
+
 #fileName = #"data_DoubleMuonB_skimmed_2017.root"
 #name = sys.argv[1].split(".")[0]
-def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, isMC=False):
+def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, isMC=False, blinded=False):
     if yr not in [2016, 2017, 2018]:
         print("Error: only Run2 (2016,2017,2018) allowed for now.")
         sys.exit()
@@ -28,6 +31,12 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
     outF = ROOT.TFile( fileName, 'recreate' )
     #have to create this before opening the file fsr??
     newT = ROOT.TTree( 'Events', 'Output tree' )
+
+    #need the passed_trig, passed_reco hists for making the trig, reco eff's
+    hpassedReco = ROOT.TH1F( 'passedReco', 'passedReco', 65, 0.0, 65.0 ) 
+    hpassedTrig = ROOT.TH1F( 'passedTrig', 'passedTrig', 65, 0.0, 65.0 ) 
+    hwpt2 = ROOT.TH1F("hWeightPt", "hWeightPt", 65, 0.0, 65.0)
+    hwpt2.Write()
 
     #max number of dimu pairs to keep
     # (keep nMax^2 4-lepton pairpairs)
@@ -57,7 +66,11 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
     #pt2e = array('f', [0]*nMax)
     #pt4l = array('f', [0]*nMax)
     ptmmmm = array('f', [0])
+    etammmm = array('f', [0])
+    phimmmm = array('f', [0])
     ptmmee = array('f', [0])
+    etammee = array('f', [0])
+    phimmee = array('f', [0])
     Qmmee = array('f', [0])
     Qmmmm = array('f', [0])
     event = array('l', [0])
@@ -71,6 +84,12 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
     ptee = array('f', [0])
     ptm = array('f', [0]*2)
     pte = array('f', [0]*2)
+    ip3dm = array('f', [0]*2)
+    dxym = array('f', [0]*2)
+    dzm = array('f', [0]*2)
+    ip3de = array('f', [0]*2)
+    dxye = array('f', [0]*2)
+    dze = array('f', [0]*2)
     mmm = array('f', [0])
     mee = array('f', [0])
     #DeltaR for each dimuon pair (relevant for mmg)
@@ -92,8 +111,15 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
     newT.Branch("Mmmee", mmmee, "Mmmee/F")
    # newT.Branch("Pt2l", pt2l, "Pt2l[%d]/F"%(nquad))
    # newT.Branch("Pt2e", pt2e, "Pt2e[%d]/F"%(nquad))
+    genetapt = array('f', [0]) 
+    newT.Branch("GenEtaPt", genetapt, "GenEtaPt/F")
     newT.Branch("Ptmmmm", ptmmmm, "Ptmmmm/F")
+    newT.Branch("Etammmm", etammmm, "Etammmm/F")
+    newT.Branch("Phimmmm", phimmmm, "Phimmmm/F")
     newT.Branch("Ptmmee", ptmmee, "Ptmmee/F")
+    #eta coordinate of the mmee
+    newT.Branch("Etammee", etammee, "Etammee/F")
+    newT.Branch("Phimmee", phimmee, "Phimmee/F")
     newT.Branch("event", event, "event/l")
     newT.Branch("run", run, "run/l")
     newT.Branch("Nmmmm", Nmmmm, "Nmmmm/l")
@@ -112,6 +138,14 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
 
     newT.Branch("Ptm", ptm, "Ptm[2]/F")
     newT.Branch("Pte", pte, "Pte[2]/F")
+    #3d impact parameter for the muons
+    newT.Branch("IP3dm", ip3dm, "IP3dm[2]/F")
+    newT.Branch("Dxym", dxym, "Dxym[2]/F")
+    newT.Branch("Dzm", dzm, "Dzm[2]/F")
+    #3d impact parameter for the electrons
+    newT.Branch("IP3de", ip3de, "IP3de[2]/F")
+    newT.Branch("Dxye", dxye, "Dxye[2]/F")
+    newT.Branch("Dze", dze, "Dze[2]/F")
 
     newT.Branch("dRmm", drmm, "dRmm/F")
     newT.Branch("dIPmm", dipmm, "dIPmm/F") 
@@ -133,25 +167,33 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
         #    sys.exit()
         #cfg = configuration.Configuration()
         #f_xsec = ROOT.TFile.Open(cfg.fns['xsecs'])
-        f_xsec = ROOT.TFile.Open("../../tm_analysis/analysis/data_out/xsecs.root")
-        h_corrXsec = f_xsec.Get("corr_xsec")
-
-        ###lumi = 146.91 #integrated luminosity for all Run2
-        if yr == 2018:
-            lumi = 63.7 #integrated luminosity for 2018
-        elif yr == 2017:
-            lumi = 45.0
-        elif yr == 2016:
-            lumi = 38.3
+        if not condor:
+            f_xsec = ROOT.TFile.Open("../../tm_analysis/analysis/data_out/xsecs.root")
         else:
-            print("year %d not recognized. Error!"%yr)
-            sys.exit()
-        sys.path.insert(1, "../../tm_analysis/analysis/python/utils")
+            f_xsec = ROOT.TFile.Open("xsecs.root")
+
+        #just treating all years together
+        lumi = 146.91 #integrated luminosity for all Run2
+       # if yr == 2018:
+       #     lumi = 63.7 #integrated luminosity for 2018
+       # elif yr == 2017:
+       #     lumi = 45.0
+       # elif yr == 2016:
+       #     lumi = 38.3
+       # else:
+       #     print("year %d not recognized. Error!"%yr)
+       #     sys.exit()
+        if not condor:
+            sys.path.insert(1, "../../tm_analysis/analysis/python/utils")
         #using a fake branching ratio to stay blind until the very end of the analysis!
         #import utils.blinding as blinding
-        import blinding
-        bratio = blinding.get_blinded_BR_EtaTo2Mu2E()
-        fxsec = ROOT.TFile.Open("../../tm_analysis/analysis/data_out/xsecs.root")
+        if blinded:
+            import blinding
+            bratio = blinding.get_blinded_BR_EtaTo2Mu2E()
+            print("blinded ratio obtained!")
+        else:
+            #only bkg for now is eta->mu mu gamma, with BR 3.1e-4  !!
+            bratio = 3.1e-4
         #this is the histogram that will let us find the proper (approximate) cross section for each event
         h_xsec = f_xsec.Get("corr_xsec")
         
@@ -167,6 +209,8 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
     inF = ROOT.TFile(full_path)
     print("opened tfile %s"%(full_path))
     t = inF.Get("Events")
+    if isMC:
+        hwpt = inF.Get("hWeightsPt")
     print("got Events tree.")
     nevents = t.GetEntries()
     ncut = 0
@@ -243,7 +287,8 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
                 #break if past the events we are supposed to analyze
                 if nevent > -1 and i > nevent: break
                 #print once in a while to make sure program is still running
-                if i % 10000 == 0:
+                #if i % 10000 == 0:
+                if i % 100 == 0:
                     print("Now processing event %d out of %d for %s_%d"%(i, nevents, fl, yr))
                 #add extra debug print statements or nah
                 dbg = False #True #False
@@ -258,16 +303,61 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
                 #first make the stricter selections
                 #make sure at least one of the dimu triggers was passed
                 passed_trig = False
-                for j in range(nwords):
-                    if e.dimuTriggerWord[j] > 0:
-                        passed_trig = True
-                        break
-                if not passed_trig:
-               #     ncut += 1
-                    if dbg:
-                        print("failed trigger.")
-               #     continue
-                cutCounter.count('Passed trigger')
+                #for j in range(nwords):
+                #    if e.dimuTriggerWord[j] > 0:
+                #        passed_trig = True
+                #        break
+                if isMC:
+                    #get info on the Gen Eta meson; obtain its pT
+                    genEta = ROOT.TLorentzVector()
+                    lep = [None for j in range(e.nGoodGenPart)] 
+                    #gen-level eta meson found?
+                    genEtaFound = False
+                    for j in range(e.nGoodGenPart):
+                        lep[j] = ROOT.TLorentzVector()
+                        #photon
+                        if e.GenPart_pdgId[j] == 22:
+                            mass = 0
+                        #muon/antimuon
+                        elif abs(e.GenPart_pdgId[j]) == 13:
+                            mass = .105
+                        #electron/positron
+                        elif abs(e.GenPart_pdgId[j]) == 11:
+                            mass = .000511
+                        #eta meson
+                        elif e.GenPart_pdgId[j] == 221:
+                            genetapt[0] = e.GenPart_pt[j]
+                            genEtaFound = True
+                            break
+                        else:
+                            print("Error!!! Unrecognized pdgId: %d"%e.GenPart_pdgId[j]) 
+                            sys.exit()
+                        lep[j].SetPtEtaPhiM( e.GenPart_pt[j], e.GenPart_eta[j], e.GenPart_phi[j], mass )
+                        
+                    if not genEtaFound:
+                        if e.nGoodGenPart == 3:
+                            genEta = lep[0] + lep[1] + lep[2]
+                        elif e.nGoodGenPart == 4:
+                            genEta = lep[0] + lep[1] + lep[2] + lep[3]
+                        else:
+                            print("Error: unrecognized nGoodGenPart: %d"%e.nGoodGenPart)
+                            sys.exit()
+                        genetapt[0] = genEta.Pt()
+                else:
+                    genetapt[0] = -99
+
+                if e.doubleMuTrig > 0: passed_trig = True
+                if passed_trig:
+                    hpassedTrig.Fill(genetapt[0]) 
+
+                #don't continue if failed trigger yet, because still want to fill the reco eff histogram.
+                #if not passed_trig:
+                #    ncut += 1
+                #    if dbg:
+                #        print("failed trigger.")
+                #    continue
+                #cutCounter.count('Passed trigger')
+
                 # (getGoodLists will return array of 4 lists, one for each particle (2 identical mu lists, 2 identical e lists))
                 goodlists = muFun.getGoodLists('mmee', e)
                 goodMuonList = goodlists[0]
@@ -322,6 +412,13 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
                 ptmm[0] = (lep0Vec + lep1Vec).Pt()
                 ptm[0] = e.Muon_pt[bestpair[0]] 
                 ptm[1] = e.Muon_pt[bestpair[1]] 
+                ip3dm[0] = e.Muon_ip3d[bestpair[0]]
+                ip3dm[1] = e.Muon_ip3d[bestpair[1]]
+                #dxy, dz of each muon
+                dxym[0] = e.Muon_dxy[bestpair[0]]
+                dxym[1] = e.Muon_dxy[bestpair[1]]
+                dzm[0] = e.Muon_dz[bestpair[0]]
+                dzm[1] = e.Muon_dz[bestpair[1]]
 
                 drmm[0] = muFun.pair_dR( e.Muon_eta[bestpair[0]], e.Muon_phi[bestpair[0]], e.Muon_eta[bestpair[1]], e.Muon_phi[bestpair[1]] )
                 dipmm[0] = mindiff
@@ -455,6 +552,8 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
                     fveclist, lepList, bestPair = muFun.getBestPairs_ip3d(cat, e, allpair2s)
                     eta4vec = fveclist[0] + fveclist[1] + fveclist[2] + fveclist[3]
                     M = eta4vec.M()
+                    if cat == 'mmee' and M > .51 and M < .63:
+                        hpassedReco.Fill(genetapt[0]) 
                     if dbg:
                         print("fveclist, lepList, bestPair, eta4vec:")
                         print(fveclist)
@@ -493,12 +592,16 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
                     if cat == "mmmm":
                         Nmmmm[0] = len(allpair2s)
                         ptmmmm[0] = pt
+                        etammmm[0] = eta4vec.Eta()
+                        phimmmm[0] = eta4vec.Phi()
                         mmmmm[0] = M
                         M4m = M
                         Qmmmm[0] = e.Muon_charge[lepList[0]] + e.Muon_charge[lepList[1]] + e.Muon_charge[bestPair[0]] + e.Muon_charge[bestPair[1]]
                     elif cat == "mmee":
                         Nmmee[0] = len(allpair2s)
                         ptmmee[0] = pt
+                        etammee[0] = eta4vec.Eta()
+                        phimmee[0] = eta4vec.Phi()
                         mmmee[0] = M
                         M2m2e = M
                         Qmmee[0] = e.Muon_charge[lepList[0]] + e.Muon_charge[lepList[1]] + e.Electron_charge[bestPair[0]] + e.Electron_charge[bestPair[1]]
@@ -508,6 +611,13 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
                         mee[0] = eevec.M()
                         pte[0] = e.Electron_pt[bestPair[0]]
                         pte[1] = e.Electron_pt[bestPair[1]]
+                        ip3de[0] = e.Electron_ip3d[bestPair[0]] 
+                        ip3de[1] = e.Electron_ip3d[bestPair[1]] 
+                        dxye[0] = e.Electron_dxy[bestPair[0]] 
+                        dxye[1] = e.Electron_dxy[bestPair[1]] 
+                        dze[0] = e.Electron_dz[bestPair[0]] 
+                        dze[1] = e.Electron_dz[bestPair[1]] 
+                   
                     #if M > 0.40 and M < 0.45: #== 0.4290032:
                     #    print("M = %f my bro!!!"%(M))
                     #    print("Mmmee after: %s"%(str(mmmee)))
@@ -534,13 +644,23 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
                 if M4m == -99:
                     mmmmm[0] = -99
                     ptmmmm[0] = -99
+                    etammmm[0] = -99
+                    phimmmm[0] = -99
                 if M2m2e == -99:
                     mmmee[0] = -99
                     ptmmee[0] = -99
+                    etammee[0] = -99
+                    phimmee[0] = -99
                     mee[0] = -99
                     ptee[0] = -99
                     pte[0] = -99
                     pte[1] = -99
+                    ip3de[0] = -99
+                    ip3de[1] = -99
+                    dxye[0] = -99
+                    dxye[1] = -99
+                    dze[0] = -99
+                    dze[1] = -99
                 for j in range(ngoodtrio, nMax):
                     mmmg[j] = -99
                     ptmmg[j] = -99
@@ -572,6 +692,13 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
                #     pt2e[0] = ee4vec.Pt()
                #     m2e[0] = ee4vec.M()
 
+                #Now that reco is done, continue if it failed the trigger.
+                if not passed_trig:
+                    ncut += 1
+                    if dbg:
+                        print("failed trigger.")
+                    continue
+                cutCounter.count('Passed trigger')
                 if isMC:
                     #set the weight for the mmee event (xsec depends on acceptance(pt)).
                     xsec = h_xsec.GetBinContent( h_xsec.FindBin( ptmmee[0] ) )
@@ -604,7 +731,11 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
            # newT.Branch("Pt2l", pt2l, "Pt2l[%d]/F"%(nquad))
            # newT.Branch("Pt2e", pt2e, "Pt2e[%d]/F"%(nquad))
             newT.Branch("Ptmmmm", ptmmmm, "Ptmmmm/F")
+            newT.Branch("Etammmm", etammmm, "Etammmm/F")
+            newT.Branch("Phimmmm", phimmmm, "Phimmmm/F")
             newT.Branch("Ptmmee", ptmmee, "Ptmmee/F")
+            newT.Branch("Etammee", etammee, "Etammee/F")
+            newT.Branch("Phimmee", phimmee, "Phimmee/F")
             newT.Branch("event", event, "event/l")
             newT.Branch("run", run, "run/l")
             newT.Branch("Nmmmm", Nmmmm, "Nmmmm/l")
@@ -622,6 +753,12 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
 
             newT.Branch("Ptm", ptm, "Ptm[2]/F")
             newT.Branch("Pte", pte, "Pte[2]/F")
+            newT.Branch("IP3dm", ip3dm, "IP3dm[2]/F")
+            newT.Branch("Dxym", dxym, "Dxym[2]/F")
+            newT.Branch("Dzm", dzm, "Dzm[2]/F")
+            newT.Branch("IP3de", ip3de, "IP3de[2]/F")
+            newT.Branch("Dxye", dxye, "Dxye[2]/F")
+            newT.Branch("Dze", dze, "Dze[2]/F")
 
             newT.Branch("dRmm", drmm, "dRmm/F")
             newT.Branch("dIPmm", dipmm, "dIPmm/F")
@@ -640,10 +777,16 @@ def makeskim(filename, yr, path, nevent, nickname, debug=False, condor=False, is
     if not succ:
         print("Error: I/O error for %s_%d!"%(fl, yr))
         raise RuntimeError
-    outF.Write()
+    if isMC:
+        hwpt2 = hwpt.Clone("hWeightPt")
+        hwpt2.Print()
+        hwpt2.SetDirectory(outF)
     inF.Close()
+    #hwpt2.Print()
+    status = outF.Write()
+    outF.Close()
     cutCounter.printSummary()
-    print("Cut %d events out of %d total ( %f %% ) for %s_%d."%(ncut, nevents, (100.0*ncut/nevents), fl, yr))
+    print("Cut %d events out of %d total ( %f %% ) for %s_%d."%(ncut, min(nevent, nevents), (100.0*ncut/min(nevent, nevents)), fl, yr))
     if condor:
         os.system("xrdcp -f %s root://cmseos.fnal.gov//store/user/bgreenbe/eta_skimmed/"%(fileName)) 
         os.system("rm -f {}".format(full_path))
@@ -664,8 +807,15 @@ def main():
     parser.add_argument("-c","--incsv",default="",type=str,help="name of input csv file with all the file names in it.")                     
     parser.add_argument("-t","--testname",default="",type=str,help="name appended to all for the ntuple files that we're going to read. eg noee for all_noee")
     parser.add_argument("-con","--condor",default=False,action='store_true',help="running on condor or nah")
+    parser.add_argument("-b","--blind",default=False,action='store_true',help="blind the BR (for signal sample!) or nah?")
     args = parser.parse_args()
 
+    blinded = False
+    if args.blind: 
+        print("blind!!")
+        blinded = True
+    else:
+        print("not blind!") 
     #get the list of processes from the csv.
     incsv = args.incsv
     filelist = []
@@ -682,6 +832,7 @@ def main():
     year = args.year
     #path to ntuple files
     path = "/eos/uscms/store/user/bgreenbe/eta_{}/all{}/".format(year, "_"+args.testname if args.testname != "" else "")
+    #if args.MC: path = "/eos/uscms/store/user/bgreenbe/EtaTo2Mu2E/NANOAODSIM/"
 
     print("filelist: " + str(filelist))
     #if debug mode requested do not try to multi-thread.
@@ -693,7 +844,7 @@ def main():
                 while os.path.exists(path + fullfile):
             ##########debugging!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1#########################################
                 #    if num == 1:
-                    makeskim(fullfile, year, path, nevent, args.nickname, args.debug, False, args.MC)    
+                    makeskim(fullfile, year, path, nevent, args.nickname, args.debug, False, args.MC, blinded)    
             ###################################################################################################
                     num += 1
                     fullfile = fn + "_" + str(year) + "_" + str(num) + ".root"
@@ -705,6 +856,7 @@ def main():
         for fn in filelist:
             num = 0
             done = False
+            fullpath = ""
             while not done:
                 try:
                     fullfile = "{}_{}_{}.root".format(fn, year, num)
@@ -717,13 +869,14 @@ def main():
                     #g.Print()
                     evs = g.Get("Events")
                     evs.Print()
-                    payloads.append((newfilename, year, "./", nevent, args.nickname, False, True, args.MC))
+                    payloads.append((newfilename, year, "./", nevent, args.nickname, False, True, args.MC, blinded))
                     num += 1
-                except ReferenceError:
+                except ( ReferenceError, OSError ):
                     print("%s_%d not found!"%(fn, num))
                     done = True
             if num == 0:
                 print("ERROR: Error no files found.")
+                print("{} not found!".format(fullpath))
                 sys.exit()
         import multiprocessing as mp
         pool  = mp.Pool(ncores)
@@ -742,7 +895,7 @@ def main():
             num = 0
             fullfile = fn + "_" + str(year) + "_" + str(num) + ".root"
             while os.path.exists(path + fullfile):
-                payloads.append((fullfile, year, path, nevent, args.nickname))
+                payloads.append((fullfile, year, path, nevent, args.nickname, False, False, args.MC, blinded))
                 num += 1
                 fullfile = fn + "_" + str(year) + "_" + str(num) + ".root"
                 

@@ -18,5 +18,12 @@ echo "Starting year $2."
 @ x = ($3)
 #echo $x
 #echo data_$2_$x.csv
+#FOR DATA
 python plotDistributions.py -c data_$2_$3.csv -y $2 -con 
 echo "Done with year $2."
+
+##FOR MC
+#source /cvmfs/sft.cern.ch/lcg/views/LCG_101/x86_64-centos7-gcc11-opt/setup.csh
+##the -b is needed for signal to make sure it's blinded!!!!!
+#python3 plotDistributions.py -c bpgTest.csv -mc -nn signalMC -y 2018 -con -b
+#python3 plotDistributions.py -c bpgTest.csv -mc -nn BkgMC -y 2018 -con

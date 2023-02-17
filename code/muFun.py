@@ -16,7 +16,7 @@ sys.path.append('../TauPOG')
 #from TauPOG.TauIDSFs.TauIDSFTool import TauESTool
 #from TauPOG.TauIDSFs.TauIDSFTool import TauFESTool
 
-__author__ = "Dan Marlow, Alexis Kalogeropoulos, Gage DeZoort"
+__author__ = "Dan Marlow, Alexis Kalogeropoulos, Gage DeZoort, Bennett Greenberg"
 __date__   = "Monday, Oct. 28th, 2019"
 
 
@@ -931,7 +931,8 @@ def goodElectron_4mu(lepTypes, entry, j, printOn=False):
         if printOn:
             printCut(entry.event, lepTypes, 'e', j, "pt", entry.Electron_pt[j])
         return False
-    if sel['ele_ID'] and not entry.Electron_looseId[j] : 
+    #if sel['ele_ID'] and not entry.Electron_looseId[j] : 
+    if sel['ele_ID'] and not entry.Electron_eMVAL[j] : 
         if printOn:
             printCut(entry.event, lepTypes, 'e', j, "looseId", entry.Electron_looseId[j])
         return False

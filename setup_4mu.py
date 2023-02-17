@@ -10,7 +10,7 @@ import sys
 def main():
     
     #submit jobs within this script (T) or just do the setup (F)
-    submit_now = True # False # True
+    submit_now = True
 
     #always delete current directory if it already exists?
     always_del = False
@@ -18,7 +18,7 @@ def main():
     year = 2018
     
     #number of root files to run in a single job
-    nroot = 5 # 1
+    nroot = 20
 
     #do systematics or nah (will take way longer)
     doSyst = False # True
@@ -42,7 +42,7 @@ def main():
         #True if the files will be stored in my personal eos space, false otherwise.
         my_eos = False
         #if "HToAA" in samp_name and "_M-" in samp_name:
-        if "EtaTo2Mu2E" in samp_name:
+        if "EtaTo2Mu2E" in samp_name or "EtaToMuMuGamma" in samp_name:
             my_eos = True
         
         isMC = True
